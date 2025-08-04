@@ -1,0 +1,170 @@
+{
+    "menu": [
+        {
+            "url": "/",
+            "name": "Home",
+            "icon": "menu-icon fa-solid fa-home",
+            "slug": "dashboard"
+        },
+        {
+            "name": "Administracion",
+            "icon": "menu-icon fa-solid fa-shield",
+            "slug": "user.index",
+            "badge": ["primary", "2"],
+            "submenu": [
+                {
+                    "url": "/user/index",
+                    "name": "Usuarios",
+                    "slug": "user.index"
+                },
+                {
+                    "url": "/rol/index",
+                    "name": "Roles",
+                    "slug": "user.rol.index"
+                },
+                {
+                    "url": "/permission/index",
+                    "name": "Permisos",
+                    "slug": "user.permission.index"
+                }
+            ]
+        },
+        {
+            "url": "/company/index",
+            "name": "Empresas",
+            "icon": "menu-icon fa-solid fa-id-badge",
+            "slug": "company.index"
+        },
+        {
+            "url": "/client/index",
+            "name": "Clientes",
+            "icon": "menu-icon fa-solid fa-user-plus",
+            "slug": "client.index"
+        },
+        {
+            "name": "Produccion",
+            "icon": "menu-icon fa-solid fa-feed",
+            "slug": "user.index",
+            "badge": ["primary", "2"],
+            "submenu": [
+                {
+                    "url": "/product/index",
+                    "name": "Productos",
+                    "slug": "product.index"
+                },
+                {
+                    "url": "/provider/index",
+                    "name": "Proveedores",
+                    "slug": "provider.index"
+                }
+            ]
+        },
+        {
+            "name": "Ventas",
+            "icon": "menu-icon fa-solid fa-dollar",
+            "slug": "sale.index",
+            "submenu": [
+                {
+                    "url": "/sale/index",
+                    "name": "Facturación",
+                    "slug": "sale.index"
+                },
+                {
+                    "url": "/presales/index",
+                    "name": "Pre-Ventas (Menudeo)",
+                    "slug": "presales.index"
+                }
+            ]
+        },
+        {
+            "url": "/purchase/index",
+            "name": "Compras",
+            "icon": "menu-icon fa-solid fa-truck",
+            "slug": "purchase.index"
+        },
+        {
+            "url": "/credit/index",
+            "name": "Creditos",
+            "icon": "menu-icon fa-solid fa-credit-card",
+            "slug": "credit.index"
+        },
+        {
+            "url": "/report/index",
+            "name": "Reportes",
+            "icon": "menu-icon fa-solid fa-line-chart",
+            "slug": "report.index",
+            "badge": ["primary", "6"],
+            "submenu": [
+                {
+                    "url": "/report/sales",
+                    "name": "Ventas",
+                    "slug": "report.sales"
+                },
+                {
+                    "url": "/report/contribuyentes",
+                    "name": "Ventas Contribuyentes",
+                    "slug": "report.contribuyentes"
+                },
+                {
+                    "url": "/report/directas",
+                    "name": "Ventas Directas",
+                    "slug": "report.directas"
+                },
+                {
+                    "url": "/report/consumidor",
+                    "name": "Ventas Consumidor",
+                    "slug": "report.consumidor"
+                },
+                {
+                    "url": "/report/purchases",
+                    "name": "Compras",
+                    "slug": "report.purchases"
+                },
+                {
+                    "url": "/report/bookpurchases",
+                    "name": "Libro de Compras",
+                    "slug": "report.bookpurchases"
+                },
+                {
+                    "url": "/report/reportyear",
+                    "name": "Ventas y compras por año",
+                    "slug": "report.reportyear"
+                }
+            ]
+        },
+        {
+            "url": "/factmh/index",
+            "name": "Administracion DTE",
+            "icon": "menu-icon fa-solid fa-satellite-dish",
+            "slug": "factmh.index",
+            "badge": ["primary", "6"],
+            "submenu": [
+                {
+                    "url": "/factmh/contingencias",
+                    "name": "Contingencias",
+                    "slug": "factmh.contingencias"
+                },
+                {
+                    "url": "/factmh/test_crt",
+                    "name": "Muestra Enviados",
+                    "slug": "factmh.test_crt"
+                },
+                {
+                    "url": "/config/index",
+                    "name": "Configuraciones Ambiente",
+                    "slug": "config.index"
+                },
+                {
+                    "url": "/correlativos/",
+                    "name": "Gestión de Correlativos",
+                    "slug": "correlativos.index"
+                },
+                {
+                    "url": "/correlativos/estadisticas/view",
+                    "name": "Estadísticas Correlativos",
+                    "slug": "correlativos.estadisticas"
+                }
+            ]
+        }
+    ]
+}
