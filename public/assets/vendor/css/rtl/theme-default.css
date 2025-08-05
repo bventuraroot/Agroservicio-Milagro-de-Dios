@@ -114,8 +114,8 @@ a.bg-primary:hover, a.bg-primary:focus {
 
 .page-item.active .page-link,
 .pagination li.active > a:not(.page-link) {
-  border-color: #FE9900;
-  background-color: #FE9900;
+  border-color: #009A1E;
+  background-color: #009A1E;
   color: #fff;
 }
 
@@ -276,8 +276,8 @@ button.list-group-item-primary.active {
 
 .btn-primary {
   color: #fff;
-  background-color: #14D1D2;
-  border-color: #14D1D2;
+  background-color: #009A1E;
+  border-color: #009A1E;
 }
 .btn-primary:hover {
   color: #fff !important;
@@ -1375,7 +1375,7 @@ li.ui-timepicker-selected,
   color: #5d596c;
 }
 .bg-menu-theme.menu-vertical .menu-item.active > .menu-link:not(.menu-toggle) {
-  background: linear-gradient(72.47deg, #FC9A00 22.16%, rgba(230, 175, 103, 0.7) 76.47%);
+  background: linear-gradient(72.47deg, #009A1E 22.16%, rgba(169, 234, 71, 0.7) 76.47%);
   box-shadow: 0px 2px 6px 0px rgba(88, 69, 44, 0.48);
   color: #fff !important;
 }

@@ -1,4 +1,4 @@
-FROM php:8.2.13-apache
+FROM php:8.2-fpm
 
 # Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
@@ -8,47 +8,67 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip
+    unzip \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmcrypt-dev \
+    libgd-dev \
+    jpegoptim optipng pngquant gifsicle \
+    libzip-dev \
+    libicu-dev \
+    g++
 
 # Limpiar cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Instalar extensiones PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
+
+# Instalar Redis
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Obtener Composer
-COPY --from=composer:2.6.5 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Crear usuario para aplicación Laravel
+RUN groupadd -g 1000 www
+RUN useradd -u 1000 -ms /bin/bash -g www www
 
 # Establecer directorio de trabajo
 WORKDIR /var/www
 
+# Copiar archivos de configuración primero para cache de layers
+COPY composer.json composer.lock ./
+
+# Instalar dependencias de Composer como usuario root
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# Instalar Node.js y dependencias
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get install -y nodejs
+
 # Copiar archivos del proyecto
 COPY . /var/www
 
-# Instalar dependencias de Composer
-RUN composer install
+# Copiar archivos de configuración de npm
+COPY package*.json ./
 
 # Instalar dependencias de Node.js
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
-RUN apt-get install -y nodejs
-RUN npm install
+RUN npm ci --only=production
 
-# Generar key de la aplicación
-RUN php artisan key:generate
+# Compilar assets
+RUN npm run build
 
-# Permisos
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Configurar permisos
+RUN chown -R www:www /var/www
+RUN chmod -R 755 /var/www/storage
+RUN chmod -R 755 /var/www/bootstrap/cache
 
-# Cambia el DocumentRoot a /var/www/html/public
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+# Cambiar a usuario www
+USER www
 
-# Habilita mod_rewrite
-RUN a2enmod rewrite
+# Exponer puerto 9000
+EXPOSE 9000
 
-# Copia el .htaccess (opcional, si no se copia con el volumen)
-COPY public/.htaccess /var/www/html/public/.htaccess
-
-# Exponer puerto 80
-EXPOSE 80
-
-CMD ["apache2-foreground"]
+CMD ["php-fpm"]

@@ -1,37 +1,76 @@
-version: '3'
+version: '3.8'
 services:
-  web:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: romacopies-web
+    container_name: agroservicio-app
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www
+      - vendor_data:/var/www/vendor
+    networks:
+      - agroservicio
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    container_name: agroservicio-nginx
     restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
-      - ./:/var/www/html
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
     networks:
-      - romacopies
+      - agroservicio
     depends_on:
-      - db
+      - app
 
   db:
-    image: mysql:8.0.32
-    container_name: romacopies-db
+    image: mysql:8.0
+    container_name: agroservicio-db
     restart: unless-stopped
     environment:
-        MYSQL_DATABASE: ${DB_DATABASE:-romacopies}
-        MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_DATABASE:-agroservicio}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
     volumes:
       - dbdata:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
-      - romacopies
+      - agroservicio
     command: --default-authentication-plugin=mysql_native_password
 
+  redis:
+    image: redis:7-alpine
+    container_name: agroservicio-redis
+    restart: unless-stopped
+    networks:
+      - agroservicio
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: agroservicio-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "8080:80"
+    networks:
+      - agroservicio
+    depends_on:
+      - db
+
 networks:
-  romacopies:
+  agroservicio:
     driver: bridge
 
 volumes:
