@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Ticket Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .test-section { border: 1px solid #ddd; margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 3px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Tickets - Diagnóstico</h1>
+
+    <div class="test-section info">
+        <h3>📋 Lista de Verificación</h3>
+        <p>Este test verificará que el sistema de tickets funcione correctamente:</p>
+        <ul>
+            <li>✓ Carga de archivos JavaScript</li>
+            <li>✓ Detección de impresoras</li>
+            <li>✓ Funcionamiento de la impresión</li>
+            <li>✓ URLs de las rutas</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🔗 Rutas de Prueba</h3>
+        <p>Estas son las URLs que deberían funcionar:</p>
+        <div>
+            <button class="btn-primary" onclick="testRoute('/sale/index')">📋 Lista de Ventas</button>
+            <button class="btn-primary" onclick="testRoute('/sale/ticket/1')">🎫 Ticket Test (ID: 1)</button>
+            <button class="btn-primary" onclick="testRoute('/sale/print/1')">🖨️ Imprimir Test (ID: 1)</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>📁 Archivos JavaScript</h3>
+        <div>
+            <button class="btn-success" onclick="testJS('assets/js/printer-detection-simple.js')">Test JS Simple</button>
+            <button class="btn-warning" onclick="testJS('assets/js/printer-detection.js')">Test JS Original</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🖨️ Test de Impresión</h3>
+        <div>
+            <button class="btn-success" onclick="testPrint()">Prueba de Impresión 80mm</button>
+            <button class="btn-warning" onclick="testPrintDialog()">Solo Mostrar Diálogo</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🌐 Información del Navegador</h3>
+        <div id="browser-info">
+            <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+            <p><strong>Plataforma:</strong> <span id="platform"></span></p>
+            <p><strong>Idioma:</strong> <span id="language"></span></p>
+            <p><strong>Online:</strong> <span id="online"></span></p>
+        </div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Información del navegador
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('platform').textContent = navigator.platform;
+        document.getElementById('language').textContent = navigator.language;
+        document.getElementById('online').textContent = navigator.onLine ? 'Sí' : 'No';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<p>${message}</p>`;
+            results.appendChild(div);
+        }
+
+        function testRoute(route) {
+            const fullUrl = window.location.origin + route;
+            addResult(`🔗 Probando ruta: ${fullUrl}`, 'info');
+
+            fetch(fullUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        addResult(`✅ Ruta ${route} - OK (${response.status})`, 'success');
+                    } else {
+                        addResult(`❌ Ruta ${route} - Error (${response.status})`, 'error');
+                    }
+                })
+                .catch(error => {
+                    addResult(`❌ Ruta ${route} - Error: ${error.message}`, 'error');
+                });
+        }
+
+        function testJS(jsFile) {
+            addResult(`📁 Probando archivo: ${jsFile}`, 'info');
+
+            const script = document.createElement('script');
+            script.src = jsFile;
+            script.onload = function() {
+                addResult(`✅ Archivo ${jsFile} cargado correctamente`, 'success');
+            };
+            script.onerror = function() {
+                addResult(`❌ Error cargando ${jsFile}`, 'error');
+            };
+            document.head.appendChild(script);
+        }
+
+        function testPrint() {
+            addResult(`🖨️ Iniciando prueba de impresión...`, 'info');
+
+            const testContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Prueba de Impresión 80mm</title>
+                    <style>
+                        @page { width: 80mm; margin: 0; }
+                        body {
+                            font-family: 'Courier New', monospace;
+                            font-size: 12px;
+                            margin: 5mm;
+                            text-align: center;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h3>PRUEBA DE IMPRESIÓN</h3>
+                    <p>═══════════════════════════</p>
+                    <p>Ancho: 80mm</p>
+                    <p>Fecha: ${new Date().toLocaleString()}</p>
+                    <p>═══════════════════════════</p>
+                    <p>Si este ticket se imprime<br>correctamente, su sistema<br>está funcionando bien</p>
+                    <p>═══════════════════════════</p>
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                                setTimeout(function() { window.close(); }, 1000);
+                            }, 500);
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+
+            try {
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(testContent);
+                printWindow.document.close();
+                addResult(`✅ Ventana de impresión abierta correctamente`, 'success');
+            } catch (error) {
+                addResult(`❌ Error abriendo ventana de impresión: ${error.message}`, 'error');
+            }
+        }
+
+        function testPrintDialog() {
+            addResult(`🖨️ Mostrando diálogo de impresión...`, 'info');
+            try {
+                window.print();
+                addResult(`✅ Diálogo de impresión mostrado`, 'success');
+            } catch (error) {
+                addResult(`❌ Error mostrando diálogo: ${error.message}`, 'error');
+            }
+        }
+
+        // Test inicial automático
+        window.onload = function() {
+            addResult(`🚀 Test iniciado en ${new Date().toLocaleString()}`, 'info');
+
+            // Verificar si estamos en el dominio correcto
+            if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+                addResult(`ℹ️ Ejecutándose en desarrollo local`, 'info');
+            } else {
+                addResult(`ℹ️ Ejecutándose en: ${window.location.hostname}`, 'info');
+            }
+        };
+    </script>
+</body>
+</html>

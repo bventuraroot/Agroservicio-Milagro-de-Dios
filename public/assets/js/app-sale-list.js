@@ -21,10 +21,14 @@ $(function () {
 
 
 
-  // Variable declaration for table
-  var dt_sale_table = $('.datatables-sale');
+  // Variable declaration for table - solo la principal, no las de borradores
+  var dt_sale_table = $('.datatables-sale').not('.draft-table').not('#draft-invoices-table').not('[data-exclude-datatables="true"]');
+
+  console.log('🔍 Tablas encontradas para DataTables:', dt_sale_table.length);
+
   // Client datatable
   if (dt_sale_table.length) {
+    console.log('✅ Inicializando DataTables en tabla principal');
     var dt_sale = dt_sale_table.DataTable({
       columnDefs: [
         {

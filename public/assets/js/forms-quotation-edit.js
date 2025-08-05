@@ -19,7 +19,8 @@ $(document).ready(function() {
         placeholder: function() {
             return $(this).data('placeholder') || 'Seleccione una opción';
         },
-        allowClear: true
+        allowClear: true,
+        width: '100%'
     });
 
     // Inicializar Flatpickr para fechas

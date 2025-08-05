@@ -76,6 +76,410 @@ class SaleController extends Controller
         return view('sales.impdoc', array("corr" => $corr));
     }
 
+    /**
+     * Generar ticket de 80mm para impresión
+     */
+    public function printTicket(Request $request, $id)
+    {
+        try {
+
+            // Verificar que el ID sea válido
+            if (!$id || !is_numeric($id)) {
+                throw new \Exception("ID de venta inválido: $id");
+            }
+
+            // Buscar la venta con todas las relaciones necesarias
+            $sale = Sale::with([
+                'client',
+                'company',
+                'typedocument',
+                'details',
+                'details.product',
+                'details.product.marca'
+            ])->find($id);
+
+            if (!$sale) {
+                throw new \Exception("Venta con ID $id no encontrada");
+            }
+
+            // Calcular totales de forma segura
+            $subtotal = 0;
+            $totalIva = 0;
+            $total = 0;
+            foreach ($sale->details as $detail) {
+                $subtotal += $detail->pricesale + $detail->nosujeta + $detail->exempt;
+                $totalIva += $detail->detained13;
+            }
+
+            $total = $subtotal + $totalIva;
+
+            // Verificar si debe auto-imprimir
+            $autoprint = $request->query('autoprint', 'true') !== 'false';
+
+            // Usar vista minimal si hay problemas con la normal
+            $view = $request->query('minimal') === 'true' ? 'sales.ticket-minimal' : 'sales.ticket';
+
+            return view($view, compact('sale', 'subtotal', 'totalIva', 'total', 'autoprint'));
+
+        } catch (\Exception $e) {
+            \Log::error("Error generando ticket para venta ID $id: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+
+            // Si es una petición AJAX, devolver JSON
+            if ($request->ajax()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Error al generar el ticket: ' . $e->getMessage()
+                ], 500);
+            }
+
+            // Si no es AJAX, redirigir con error
+            return back()->with('error', 'Error al generar el ticket: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtener información de impresoras del servidor (si está disponible)
+     */
+    public function getPrinterInfo()
+    {
+        try {
+            $printerInfo = [
+                'server_printers' => [],
+                'recommendations' => [
+                    'width' => '80mm',
+                    'type' => 'thermal',
+                    'margin' => '0mm'
+                ],
+                'common_80mm_printers' => [
+                    'Epson TM-T88V',
+                    'Epson TM-T88VI',
+                    'Star TSP650II',
+                    'Bixolon SRP-350plusIII',
+                    'Citizen CT-S310A',
+                    'POS-80 Series'
+                ]
+            ];
+
+            // En sistemas Windows, podrías intentar ejecutar comandos del sistema
+            // para obtener información de impresoras (requiere permisos especiales)
+            if (PHP_OS_FAMILY === 'Windows') {
+                $printerInfo['os'] = 'Windows';
+                $printerInfo['note'] = 'Use las propiedades de impresora en Windows para configurar papel de 80mm';
+            } else {
+                $printerInfo['os'] = PHP_OS_FAMILY;
+                $printerInfo['note'] = 'Configure su impresora térmica como predeterminada del sistema';
+            }
+
+            return response()->json($printerInfo);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'No se pudo obtener información de impresoras del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar ticket en formato ESC/POS RAW para impresoras térmicas
+     */
+    public function printTicketRaw(Request $request, $id)
+    {
+        try {
+            // Verificar que el ID sea válido
+            if (!$id || !is_numeric($id)) {
+                throw new \Exception("ID de venta inválido: $id");
+            }
+
+            // Buscar la venta
+            $sale = Sale::with([
+                'client',
+                'company',
+                'typedocument',
+                'details',
+                'details.product',
+                'details.product.marca'
+            ])->find($id);
+
+            if (!$sale) {
+                throw new \Exception("Venta con ID $id no encontrada");
+            }
+
+            // Generar contenido RAW ESC/POS
+            $escpos = $this->generateESCPOS($sale);
+
+            // Devolver como archivo de descarga que se puede enviar directamente a la impresora
+            return response($escpos)
+                ->header('Content-Type', 'application/octet-stream')
+                ->header('Content-Disposition', 'attachment; filename="ticket_' . $id . '.prn"')
+                ->header('Cache-Control', 'no-cache');
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Error al generar ticket RAW: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar comandos ESC/POS para impresora térmica
+     */
+    private function generateESCPOS($sale)
+    {
+        $esc = "\x1B";  // ESC
+        $gs = "\x1D";   // GS
+
+        $escpos = "";
+
+        // Inicializar impresora
+        $escpos .= $esc . "@";  // Reset
+
+        // Configurar papel de 80mm
+        $escpos .= $esc . "D\x02\x05\x08\x00";  // Tabs
+
+        // Centrar y nombre de empresa
+        $escpos .= $esc . "a\x01";  // Centrar
+        $escpos .= $esc . "!\x30";  // Doble alto y ancho
+        $escpos .= ($sale->company->name ?? 'EMPRESA') . "\n";
+        $escpos .= $esc . "!\x00";  // Tamaño normal
+
+        // Información de empresa
+        if ($sale->company->address) {
+            $escpos .= $sale->company->address . "\n";
+        }
+        if ($sale->company->phone) {
+            $escpos .= "Tel: " . $sale->company->phone . "\n";
+        }
+
+        // Línea separadora
+        $escpos .= str_repeat("-", 48) . "\n";
+
+        // Alinear a la izquierda
+        $escpos .= $esc . "a\x00";
+
+        // Info del ticket
+        $escpos .= "TICKET #" . $sale->id . "\n";
+        $escpos .= "Fecha: " . $sale->created_at->format('d/m/Y H:i:s') . "\n";
+        $escpos .= "Cliente: " . ($sale->client->firstname ?? 'CLIENTE GENERAL') . "\n";
+
+        $escpos .= str_repeat("-", 48) . "\n";
+
+        // Productos
+        $subtotal = 0;
+        $totalIva = 0;
+
+        foreach ($sale->details as $detail) {
+            $subtotal += $detail->pricesale + $detail->nosujeta + $detail->exempt;
+            $totalIva += $detail->detained13;
+
+            $name = ($detail->product->name ?? 'Producto') . ' ' . ($detail->product->marca->name ?? '');
+            if (strlen($name) > 32) {
+                $name = substr($name, 0, 32);
+            }
+
+            $escpos .= $name . "\n";
+            $escpos .= sprintf("  %d x $%.2f = $%.2f\n",
+                $detail->amountp ?? 1,
+                $detail->priceunit ?? 0,
+                $detail->pricesale ?? 0
+            );
+        }
+
+        $escpos .= str_repeat("-", 48) . "\n";
+
+        // Totales
+        $escpos .= sprintf("%-30s $%.2f\n", "Subtotal:", $subtotal);
+        $escpos .= sprintf("%-30s $%.2f\n", "IVA:", $totalIva);
+        $escpos .= str_repeat("=", 48) . "\n";
+
+        // Total en grande
+        $escpos .= $esc . "!\x20";  // Doble alto
+        $escpos .= sprintf("TOTAL: $%.2f\n", $subtotal + $totalIva);
+        $escpos .= $esc . "!\x00";  // Normal
+
+        // Footer
+        $escpos .= "\n";
+        $escpos .= $esc . "a\x01";  // Centrar
+        $escpos .= "¡GRACIAS POR SU COMPRA!\n";
+        $escpos .= "Conserve este ticket\n";
+        $escpos .= "\n\n\n";
+
+        // Cortar papel
+        $escpos .= $gs . "V\x41\x03";  // Corte total
+
+        return $escpos;
+    }
+
+    /**
+     * Imprimir ticket directamente en impresora sin diálogos
+     */
+    public function printTicketDirectToprinter(Request $request, $id)
+    {
+        try {
+            // Verificar que el ID sea válido
+            if (!$id || !is_numeric($id)) {
+                throw new \Exception("ID de venta inválido: $id");
+            }
+
+            // Buscar la venta
+            $sale = Sale::with([
+                'client',
+                'company',
+                'typedocument',
+                'details',
+                'details.product',
+                'details.product.marca'
+            ])->find($id);
+
+            if (!$sale) {
+                throw new \Exception("Venta con ID $id no encontrada");
+            }
+
+            // Generar contenido ESC/POS para impresión directa
+            $escpos = $this->generateESCPOS($sale);
+
+            // Intentar imprimir directamente en la impresora del sistema
+            $printResult = $this->sendToPrinter($escpos, $id);
+
+            if ($printResult['success']) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Ticket enviado a la impresora correctamente',
+                    'printer' => $printResult['printer'] ?? 'Predeterminada'
+                ]);
+            } else {
+                // Si falla, devolver el contenido para descargar
+                return response($escpos)
+                    ->header('Content-Type', 'application/octet-stream')
+                    ->header('Content-Disposition', 'attachment; filename="ticket_' . $id . '.prn"');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error("Error imprimiendo ticket directamente: " . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'Error al imprimir directamente: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Enviar datos directamente a la impresora del sistema
+     */
+    private function sendToPrinter($data, $ticketId)
+    {
+        try {
+            // Detectar sistema operativo
+            $os = PHP_OS_FAMILY;
+
+            // Crear archivo temporal
+            $tempFile = sys_get_temp_dir() . '/ticket_' . $ticketId . '_' . time() . '.prn';
+            file_put_contents($tempFile, $data);
+
+            $success = false;
+            $printer = '';
+
+            if ($os === 'Windows') {
+                // Windows: Intentar imprimir con diferentes métodos
+                $commands = [
+                    'copy "' . $tempFile . '" LPT1:', // Puerto paralelo
+                    'copy "' . $tempFile . '" PRN',   // Impresora predeterminada
+                    'print "' . $tempFile . '"'       // Comando print
+                ];
+
+                foreach ($commands as $cmd) {
+                    $output = [];
+                    $returnVar = 0;
+                    exec($cmd . ' 2>&1', $output, $returnVar);
+
+                    if ($returnVar === 0) {
+                        $success = true;
+                        $printer = 'Windows - ' . explode(' ', $cmd)[0];
+                        break;
+                    }
+                }
+
+            } elseif ($os === 'Linux' || $os === 'Darwin') {
+                // Linux/Mac: Usar lp command
+                $commands = [
+                    'lp "' . $tempFile . '"',                    // Impresora predeterminada
+                    'lp -d "POS-80" "' . $tempFile . '"',        // Impresora específica
+                    'cat "' . $tempFile . '" > /dev/usb/lp0',   // Puerto USB directo
+                ];
+
+                foreach ($commands as $cmd) {
+                    $output = [];
+                    $returnVar = 0;
+                    exec($cmd . ' 2>&1', $output, $returnVar);
+
+                    if ($returnVar === 0) {
+                        $success = true;
+                        $printer = 'Unix - lp';
+                        break;
+                    }
+                }
+            }
+
+            // Limpiar archivo temporal
+            @unlink($tempFile);
+
+            return [
+                'success' => $success,
+                'printer' => $printer,
+                'os' => $os
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error("Error enviando a impresora: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Generar ticket en formato HTML para impresión directa sin preview
+     */
+    public function printTicketDirect(Request $request, $id)
+    {
+        try {
+            // Verificar que el ID sea válido
+            if (!$id || !is_numeric($id)) {
+                throw new \Exception("ID de venta inválido: $id");
+            }
+
+            // Buscar la venta
+            $sale = Sale::with([
+                'client',
+                'company',
+                'typedocument',
+                'details',
+                'details.product',
+                'details.product.marca'
+            ])->find($id);
+
+            if (!$sale) {
+                throw new \Exception("Venta con ID $id no encontrada");
+            }
+
+            // Crear un HTML optimizado para impresión directa
+            $html = view('sales.ticket-direct', compact('sale'))->render();
+
+            return response($html)
+                ->header('Content-Type', 'text/html; charset=utf-8')
+                ->header('Cache-Control', 'no-cache');
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => 'Error al generar ticket directo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal)
     {
         //\Log::info("savefactemp llamado con idsale: " . $idsale);
@@ -680,9 +1084,31 @@ class SaleController extends Controller
             $salesave->save();
             $exit = 1;
             DB::commit();
-            return response()->json(array(
-                "res" => $exit
-            ));
+
+                        // Generar ticket automáticamente después de completar la venta
+            try {
+                $saleId = base64_decode($corr);
+                $ticketPrintUrl = route('sale.ticket-print', $saleId);
+                $ticketDirectUrl = route('sale.ticket-direct', $saleId);
+
+                // Agregar información del ticket a la respuesta para que el frontend lo abra
+                return response()->json(array(
+                    "res" => $exit,
+                    "ticket_auto" => true,
+                    "ticket_print_url" => $ticketPrintUrl,  // Impresión directa del servidor
+                    "ticket_url" => $ticketDirectUrl,       // Fallback del navegador
+                    "sale_id" => $saleId,
+                    "message" => "Venta completada. Generando ticket automáticamente..."
+                ));
+
+            } catch (\Exception $e) {
+                \Log::error("Error generando ticket automático: " . $e->getMessage());
+                // Si falla el ticket, la venta ya está guardada, solo devolver respuesta normal
+                return response()->json(array(
+                    "res" => $exit,
+                    "ticket_error" => "No se pudo generar el ticket automáticamente"
+                ));
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'No se pudo procesar el documento', 'message' => $e->getMessage()], 500);
@@ -1780,42 +2206,53 @@ class SaleController extends Controller
     }
     public function genera_pdflocal($id)
     {
-        $factura = Sale::leftjoin('dte', 'dte.sale_id', '=', 'sales.id')
-            ->join('companies', 'companies.id', '=', 'sales.company_id')
-            ->join('addresses', 'addresses.id', '=', 'companies.address_id')
-            ->join('countries', 'countries.id', '=', 'addresses.country_id')
-            ->join('departments', 'departments.id', '=', 'addresses.department_id')
-            ->join('municipalities', 'municipalities.id', '=', 'addresses.municipality_id')
-            ->join('clients as cli', 'cli.id', '=', 'sales.client_id')
-            ->join('addresses as add', 'add.id', '=', 'cli.address_id')
-            ->join('countries as cou', 'cou.id', '=', 'add.country_id')
-            ->join('departments as dep', 'dep.id', '=', 'add.department_id')
-            ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
-            ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
-            ->select(
-                'sales.*',
-                'dte.json',
-                'sales.json as jsonlocal',
-                'countries.name as PaisE',
-                'departments.name as DepartamentoE',
-                'municipalities.name as MunicipioE',
-                'cou.name as PaisR',
-                'dep.name as DepartamentoR',
-                'muni.name as MunicipioR',
-                'typedoc.codemh'
-            )
-            ->where('sales.id', '=', $id)
-            ->get();
-        //dd($factura);
-        $comprobante = json_decode($factura, true);
-        //dd(json_decode($comprobante[0]["json"]));
-        $data = json_decode($comprobante[0]["jsonlocal"], true);
-        //dd($data);
+        try {
+            $factura = Sale::leftjoin('dte', 'dte.sale_id', '=', 'sales.id')
+                ->leftjoin('companies', 'companies.id', '=', 'sales.company_id')
+                ->leftjoin('addresses', 'addresses.id', '=', 'companies.address_id')
+                ->leftjoin('countries', 'countries.id', '=', 'addresses.country_id')
+                ->leftjoin('departments', 'departments.id', '=', 'addresses.department_id')
+                ->leftjoin('municipalities', 'municipalities.id', '=', 'addresses.municipality_id')
+                ->leftjoin('clients as cli', 'cli.id', '=', 'sales.client_id')
+                ->leftjoin('addresses as add', 'add.id', '=', 'cli.address_id')
+                ->leftjoin('countries as cou', 'cou.id', '=', 'add.country_id')
+                ->leftjoin('departments as dep', 'dep.id', '=', 'add.department_id')
+                ->leftjoin('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
+                ->leftjoin('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
+                ->select(
+                    'sales.*',
+                    'dte.json',
+                    'sales.json as jsonlocal',
+                    'countries.name as PaisE',
+                    'departments.name as DepartamentoE',
+                    'municipalities.name as MunicipioE',
+                    'cou.name as PaisR',
+                    'dep.name as DepartamentoR',
+                    'muni.name as MunicipioR',
+                    'typedoc.codemh'
+                )
+                ->where('sales.id', '=', $id)
+                ->first();
 
-        //print_r($data);
-        //dd($data);
-        //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
-        $tipo_comprobante = $comprobante[0]['codemh'];
+            if (!$factura) {
+                throw new \Exception("Venta con ID $id no encontrada");
+            }
+
+            if (!$factura->jsonlocal) {
+                throw new \Exception("Datos de factura incompletos para ID $id");
+            }
+            //dd($factura);
+            $data = json_decode($factura->jsonlocal, true);
+            //dd($data);
+
+            if (!$data) {
+                throw new \Exception("No se pudo decodificar los datos JSON de la factura");
+            }
+
+            //print_r($data);
+            //dd($data);
+            //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
+            $tipo_comprobante = $factura->codemh;
         switch ($tipo_comprobante) {
             case '03': //CRF
                 $rptComprobante = 'pdf.crflocal';
@@ -1831,42 +2268,90 @@ class SaleController extends Controller
                 break;
 
             default:
-                # code...
+                // Usar faclocal como vista por defecto
+                $rptComprobante = 'pdf.faclocal';
+                \Log::warning("Tipo de comprobante desconocido: $tipo_comprobante. Usando vista por defecto.");
                 break;
         }
-        //$fecha = $data["json"]["fhRecibido"];
-        //dd($data);
-        $fecha = $data['documento'][0]['fechacreacion'];
-        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
-        //return  '<img src="data:image/png;base64,'.$qr .'">';
-        $data["codTransaccion"] = "01";
-        //$data["PaisE"] = $factura[0]['PaisE'];
-        //$data["DepartamentoE"] = $factura[0]['DepartamentoE'];
-        //$data["MunicipioE"] = $factura[0]['MunicipioE'];
-        //$data["PaisR"] = $factura[0]['PaisR'];
-        //$data["DepartamentoR"] = $factura[0]['DepartamentoR'];
-        //$data["MunicipioR"] = $factura[0]['MunicipioR'];
-        //$data["qr"] = $qr;
-        $tamaño = "Letter";
-        $orientacion = "Portrait";
-        $pdf = app('dompdf.wrapper');
-        $pdf->set_option('isHtml5ParserEnabled', true);
-        $pdf->set_option('isRemoteEnabled', true);
-        //dd(asset('/temp'));
-        // $pdf->set_option('tempDir', asset('/temp'));
-        //dd($data);
-        $pdf->loadHtml(ob_get_clean());
-        $pdf->setPaper($tamaño, $orientacion);
-        $pdf->getDomPDF()->set_option("enable_php", true);
-        $pdf->loadView($rptComprobante, $data);
-        //dd($pdf);
-        return $pdf;
+
+        // Verificar que la vista existe
+        if (!view()->exists($rptComprobante)) {
+            throw new \Exception("Vista PDF no encontrada: $rptComprobante");
+        }
+            //$fecha = $data["json"]["fhRecibido"];
+            //dd($data);
+            $fecha = $data['documento'][0]['fechacreacion'] ?? date('Y-m-d');
+
+            // Manejo seguro del QR
+            try {
+                if (function_exists('codigoQR') && isset($data["documento"][0]["ambiente"]) && isset($data["json"]["codigoGeneracion"])) {
+                    $qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
+                } else {
+                    $qr = '';
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Error generando código QR: " . $e->getMessage());
+                $qr = '';
+            }
+            //return  '<img src="data:image/png;base64,'.$qr .'">';
+            $data["codTransaccion"] = "01";
+            $data["PaisE"] = $factura->PaisE ?? '';
+            $data["DepartamentoE"] = $factura->DepartamentoE ?? '';
+            $data["MunicipioE"] = $factura->MunicipioE ?? '';
+            $data["PaisR"] = $factura->PaisR ?? '';
+            $data["DepartamentoR"] = $factura->DepartamentoR ?? '';
+            $data["MunicipioR"] = $factura->MunicipioR ?? '';
+            $data["qr"] = $qr;
+            $tamaño = "Letter";
+            $orientacion = "Portrait";
+            $pdf = app('dompdf.wrapper');
+
+            // Configuraciones optimizadas para evitar problemas de memoria
+            $pdf->set_option('isHtml5ParserEnabled', true);
+            $pdf->set_option('isRemoteEnabled', true);
+            $pdf->set_option('defaultFont', 'Arial');
+            $pdf->set_option('dpi', 96);
+            $pdf->set_option('fontHeightRatio', 1.1);
+            $pdf->set_option('isPhpEnabled', true);
+
+            // Aumentar límite de memoria temporalmente
+            ini_set('memory_limit', '256M');
+
+            $pdf->setPaper($tamaño, $orientacion);
+            $pdf->getDomPDF()->set_option("enable_php", true);
+            $pdf->loadView($rptComprobante, $data);
+            //dd($pdf);
+            return $pdf;
+
+        } catch (\Exception $e) {
+            \Log::error("Error en genera_pdflocal para ID $id: " . $e->getMessage());
+            throw $e; // Re-lanzar la excepción para que la maneje el método print()
+        }
     }
     public function print($id)
     {
-        //$pdf = $this->genera_pdf($id);
-        $pdf = $this->genera_pdflocal($id);
-        return $pdf->stream('comprobante.pdf');
+        try {
+            \Log::info("Iniciando generación de PDF para venta ID: $id");
+
+            //$pdf = $this->genera_pdf($id);
+            $pdf = $this->genera_pdflocal($id);
+
+            \Log::info("PDF generado exitosamente para venta ID: $id");
+            return $pdf->stream('comprobante.pdf');
+        } catch (\Exception $e) {
+            \Log::error("Error al generar PDF para venta ID $id: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+
+            // Si es una petición AJAX, devolver JSON
+            if (request()->ajax()) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Error al generar el PDF: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Error al generar el PDF: ' . $e->getMessage());
+        }
     }
 
     public function destinos()

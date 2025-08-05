@@ -194,6 +194,14 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::post('store', [SaleController::class, 'store'])->name('store');
         Route::get('createdocument/{corr}/{amount}', [SaleController::class, 'createdocument'])->name('createdocument');
         Route::get('impdoc/{corr}', [SaleController::class, 'impdoc'])->name('impdoc');
+        Route::get('ticket/{id}', [SaleController::class, 'printTicket'])->name('ticket');
+        Route::get('ticket-direct/{id}', [SaleController::class, 'printTicketDirect'])->name('ticket-direct');
+        Route::get('ticket-print/{id}', [SaleController::class, 'printTicketDirectToprinter'])->name('ticket-print');
+        Route::get('ticket-raw/{id}', [SaleController::class, 'printTicketRaw'])->name('ticket-raw');
+        Route::get('ticket-test/{id?}', function($id = 1) {
+            return "Test ticket para venta ID: $id - <a href='" . route('sale.ticket', $id) . "' target='_blank'>Abrir Ticket</a>";
+        })->name('ticket-test');
+        Route::get('printer-info', [SaleController::class, 'getPrinterInfo'])->name('printer-info');
         Route::get('destroy/{id}', [SaleController::class, 'destroy'])->name('destroy');
         Route::get('savefactemp/{idsale}/{clientid}/{productid}/{cantida}/{price}/{nosujeto}/{exento}/{gravado}/{iva}/{renta}/{retenido}/{acuenta}/{fpago}/{fee}/{reserva}/{ruta}/{destino}/{linea}/{canal}', [SaleController::class, 'savefactemp'])->name('savefactemp');
         Route::get('newcorrsale/{typedocument}', [SaleController::class, 'newcorrsale'])->name('newcorrsale');
@@ -201,7 +209,7 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::get('destroysaledetail/{idsaledetail}', [SaleController::class, 'destroysaledetail'])->name('destroysaledetail');
         Route::get('ncr/{id_sale}', [SaleController::class, 'ncr'])->name('ncr');
         Route::get('envia_correo', [SaleController::class, 'envia_correo'])->name('envia_correo');
-        Route::get('sale/print/{id}', [SaleController::class, 'print'])->name('print');
+        Route::get('print/{id}', [SaleController::class, 'print'])->name('print');
         Route::get('destinos', [SaleController::class, 'destinos'])->name('destinos');
         Route::get('linea', [SaleController::class, 'linea'])->name('linea');
         Route::get('get-draft-preventa/{id}', [SaleController::class, 'getDraftPreventaData'])->name('get-draft-preventa');
@@ -350,7 +358,7 @@ Route::group(['prefix' => 'cotizaciones', 'as' => 'cotizaciones.'], function(){
     Route::patch('change-status/{id}', [QuotationController::class, 'changeStatus'])->name('changeStatus');
 
     // Rutas para PDF
-    Route::get('pdf/{id}', [QuotationController::class, 'generatePDF'])->name('pdf'); 
+    Route::get('pdf/{id}', [QuotationController::class, 'generatePDF'])->name('pdf');
     Route::get('download/{id}', [QuotationController::class, 'downloadPDF'])->name('download');
 
     // Rutas para correo

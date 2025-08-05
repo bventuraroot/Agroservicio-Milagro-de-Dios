@@ -36,42 +36,6 @@
 @endsection
 
 @section('page-script')
-    <script>
-        // Interceptar DataTables ANTES de que se cargue el script principal
-        $(document).ready(function() {
-            // Guardar el DataTable original
-            const originalDataTable = $.fn.DataTable;
-
-            // Sobrescribir DataTable para filtrar tablas
-            $.fn.DataTable = function(options) {
-                // Solo permitir DataTables en la tabla principal de ventas
-                if (this.hasClass('datatables-sale') && !this.hasClass('draft-table') && !this.attr('data-exclude-datatables')) {
-                    return originalDataTable.call(this, options);
-                } else {
-                    console.log('DataTable bloqueado en tabla:', this.attr('class') || this.attr('id'));
-                    return this; // Retornar el objeto jQuery sin inicializar DataTables
-                }
-            };
-
-            // Copiar todas las propiedades estáticas de DataTable
-            for (let prop in originalDataTable) {
-                if (originalDataTable.hasOwnProperty(prop)) {
-                    $.fn.DataTable[prop] = originalDataTable[prop];
-                }
-            }
-
-            // Asegurar que las extensiones funcionen
-            $.fn.DataTable.ext = originalDataTable.ext;
-            $.fn.DataTable.Api = originalDataTable.Api;
-            $.fn.DataTable.models = originalDataTable.models;
-            $.fn.DataTable.settings = originalDataTable.settings;
-            $.fn.DataTable.defaults = originalDataTable.defaults;
-            $.fn.DataTable.Responsive = originalDataTable.Responsive;
-
-            // También sobrescribir el alias dataTable
-            $.fn.dataTable = $.fn.DataTable;
-        });
-    </script>
     <script src="{{ asset('assets/js/app-sale-list.js') }}"></script>
     <script>
         function EnviarCorreo(id_factura,correo,numero) {
@@ -442,7 +406,7 @@
             }
         }
     </script>
-@endsection 
+@endsection
 
 @section('title', 'Ventas')
 
@@ -509,15 +473,21 @@
             <div class="gap-3 pb-2 d-flex justify-content-between align-items-center row gap-md-0">
                 <div class="col-md-4 companies"></div>
                 <div class="col-md-8 text-end">
+                    <button id="ticket-auto-toggle"
+                            onclick="toggleTicketAuto()"
+                            class="btn btn-sm btn-success me-2"
+                            title="Activar/Desactivar generación automática de tickets al completar ventas">
+                        <i class="ti ti-check me-1"></i>Ticket Auto: ON
+                    </button>
                     <button type="button" class="btn btn-outline-warning me-2" onclick="loadDraftInvoices()">
                         <i class="ti ti-file-invoice me-1"></i>
                         Borradores de Factura
                         <span class="badge bg-warning ms-1" id="draft-count">0</span>
                     </button>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectDocumentModal">
+                    <!--<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectDocumentModal">
                         <i class="ti ti-plus me-1"></i>
                         Nueva Venta
-                    </button>
+                    </button>-->
                 </div>
             </div>
         </div>
@@ -645,15 +615,30 @@
                                         @case(1)
                                         <div class="d-flex align-items-center">
                                             <a href="{{route('sale.print', $sale->id)}}"
-                                                    class="btn btn-icon btn-outline-secondary btn-sm me-1" target="_blank" title="Imprimir">
+                                                    class="btn btn-icon btn-outline-secondary btn-sm me-1" target="_blank" title="Imprimir Factura">
                                                 <i class="ti ti-printer"></i>
+                                            </a>
+                                                                                         <!-- Botón principal: IMPRIME AUTOMÁTICO -->
+                                            <a href="javascript:void(0)"
+                                               onclick="imprimirTicketAutomatico({{$sale->id}})"
+                                               class="btn btn-icon btn-outline-info btn-sm me-1"
+                                               title="Imprimir Ticket Automáticamente">
+                                                <i class="ti ti-receipt"></i>
+                                            </a>
+
+                                            <!-- Botón secundario: SOLO PREVISUALIZAR -->
+                                            <a href="{{route('sale.ticket', $sale->id)}}?autoprint=false"
+                                               target="_blank"
+                                               class="btn btn-icon btn-outline-secondary btn-sm"
+                                               title="Solo Previsualizar Ticket">
+                                                <i class="ti ti-eye"></i>
                                             </a>
                                             <a href="#"
                                                     onclick="EnviarCorreo({{$sale->id}} ,'{{ $sale->mailClient}}','{{$sale->id_doc }}')"
                                                     class="btn btn-icon btn-outline-success btn-sm me-1" title="Enviar por correo">
                                                 <i class="ti ti-mail"></i>
                                             </a>
-                                            <div class="btn-group">
+                                            <div class="btn-group dropup">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                                                     <i class="ti ti-dots-vertical"></i>
                                                 </button>
@@ -774,7 +759,107 @@
                   </div>
               </form>
             </div>
-          </div>
+                    </div>
         </div>
-      </div>
+    </div>
+
+    <script>
+        // Configuración de ticket automático (se puede cambiar por el usuario)
+        let ticketAutoEnabled = localStorage.getItem('ticket_auto_enabled') !== 'false'; // Por defecto activado
+
+        // Función para alternar ticket automático
+        function toggleTicketAuto() {
+            ticketAutoEnabled = !ticketAutoEnabled;
+            localStorage.setItem('ticket_auto_enabled', ticketAutoEnabled);
+
+            const btn = document.getElementById('ticket-auto-toggle');
+            if (btn) {
+                btn.innerHTML = ticketAutoEnabled ?
+                    '<i class="ti ti-check me-1"></i>Ticket Auto: ON' :
+                    '<i class="ti ti-x me-1"></i>Ticket Auto: OFF';
+                btn.className = ticketAutoEnabled ?
+                    'btn btn-sm btn-success' :
+                    'btn btn-sm btn-secondary';
+            }
+
+            // Mostrar notificación
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: ticketAutoEnabled ? 'Ticket Automático Activado' : 'Ticket Automático Desactivado',
+                    text: ticketAutoEnabled ?
+                        'Se generará automáticamente después de cada venta' :
+                        'No se generará automáticamente',
+                    icon: ticketAutoEnabled ? 'success' : 'info',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        }
+
+                                                                // Función SIMPLIFICADA: Imprime automáticamente SIN opciones
+        function imprimirTicketAutomatico(saleId) {
+            console.log('🖨️ Imprimiendo ticket automáticamente para venta #' + saleId);
+
+            // Mostrar notificación de imprimiendo
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Imprimiendo...',
+                    icon: 'info',
+                    timer: 1000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+
+            // Intentar impresión directa del servidor
+            const ticketPrintUrl = '{{ route("sale.ticket-print", ":id") }}'.replace(':id', saleId);
+
+            fetch(ticketPrintUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('✅ Ticket impreso directamente');
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: '✅ ¡Impreso!',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
+                            });
+                        }
+                    } else {
+                        // Fallback: abrir ticket para imprimir en navegador
+                        console.log('⚠️ Fallback a navegador');
+                        const ticketUrl = '{{ route("sale.ticket-direct", ":id") }}'.replace(':id', saleId);
+                        window.open(ticketUrl, 'ticket_' + saleId, 'width=400,height=500,scrollbars=no,resizable=no,menubar=no,toolbar=no');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    // Fallback: abrir ticket para imprimir en navegador
+                    const ticketUrl = '{{ route("sale.ticket-direct", ":id") }}'.replace(':id', saleId);
+                    window.open(ticketUrl, 'ticket_' + saleId, 'width=400,height=500,scrollbars=no,resizable=no,menubar=no,toolbar=no');
+                });
+        }
+
+
+
+        // Inicializar estado del botón de ticket automático al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('ticket-auto-toggle');
+            if (btn) {
+                // Aplicar estado actual
+                btn.innerHTML = ticketAutoEnabled ?
+                    '<i class="ti ti-check me-1"></i>Ticket Auto: ON' :
+                    '<i class="ti ti-x me-1"></i>Ticket Auto: OFF';
+                btn.className = ticketAutoEnabled ?
+                    'btn btn-sm btn-success me-2' :
+                    'btn btn-sm btn-secondary me-2';
+            }
+        });
+    </script>
 @endsection

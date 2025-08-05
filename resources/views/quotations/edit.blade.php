@@ -130,11 +130,13 @@
                             <label class="form-label" for="product_select">Agregar Producto</label>
                             <select id="product_select" class="form-select select2">
                                 <option value="">Buscar producto...</option>
-                                @foreach($products as $product)
+                                @forelse($products as $product)
                                     <option value="{{ $product->id }}" data-price="{{ $product->price }}" data-name="{{ $product->name }}">
                                         {{ $product->name }} - ${{ number_format($product->price, 2) }}
                                     </option>
-                                @endforeach
+                                @empty
+                                    <option value="" disabled>No hay productos disponibles</option>
+                                @endforelse
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -306,20 +308,21 @@
 
 <script>
 // Pasar datos existentes a JavaScript
-window.existingProducts = @json($quotation->details->map(function($detail, $index) {
-    return [
-        'index' => $index,
-        'product_id' => $detail->product_id,
-        'product_name' => $detail->product->name,
-        'quantity' => $detail->quantity,
-        'unit_price' => $detail->unit_price,
-        'discount_percentage' => $detail->discount_percentage,
-        'discount_amount' => $detail->discount_amount,
-        'subtotal' => $detail->subtotal,
-        'tax_amount' => $detail->tax_amount,
-        'total' => $detail->total
-    ];
-}));
+window.existingProducts = [];
+@foreach($quotation->details as $index => $detail)
+window.existingProducts.push({
+    index: {{ $index }},
+    product_id: {{ $detail->product_id ?? 0 }},
+    product_name: {!! json_encode($detail->product ? $detail->product->name : 'Producto no disponible') !!},
+    quantity: {{ $detail->quantity ?? 0 }},
+    unit_price: {{ $detail->unit_price ?? 0 }},
+    discount_percentage: {{ $detail->discount_percentage ?? 0 }},
+    discount_amount: {{ $detail->discount_amount ?? 0 }},
+    subtotal: {{ $detail->subtotal ?? 0 }},
+    tax_amount: {{ $detail->tax_amount ?? 0 }},
+    total: {{ $detail->total ?? 0 }}
+});
+@endforeach
 </script>
 
 @endsection

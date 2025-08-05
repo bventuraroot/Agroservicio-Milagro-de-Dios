@@ -606,7 +606,7 @@ function searchproduct(idpro) {
     var typecontricompany = $("#typecontribuyente").val();
     var typecontriclient = $("#typecontribuyenteclient").val();
     var iva = parseFloat($("#iva").val());
-    var iva_entre = parseFloat($("#iva_entre").val());
+    var iva_entre = parseFloat($("#iva_entre").val()) || 1.13; // Valor por defecto si no está definido
     //var typecontriclient = $("#typecontribuyenteclient").val();
     var retencion=0.00;
     var pricevalue;
@@ -615,12 +615,18 @@ function searchproduct(idpro) {
         method: "GET",
         success: function (response) {
             $.each(response, function (index, value) {
+                console.log('Producto recibido:', value);
+                console.log('Tipo de documento:', typedoc);
+                console.log('IVA entre:', iva_entre);
+                console.log('Precio original:', value.price);
 
                 if(typedoc=='6' || typedoc=='8'){
                     pricevalue = parseFloat(value.price);
                 }else{
                     pricevalue = parseFloat(value.price/iva_entre);
                 }
+
+                console.log('Precio calculado:', pricevalue);
                 $("#precio").val(pricevalue.toFixed(2));
                 $("#productname").val(value.productname);
                 $("#marca").val(value.marcaname);
@@ -668,7 +674,7 @@ function searchproductcode(codeproduct) {
     var typecontricompany = $("#typecontribuyente").val();
     var typecontriclient = $("#typecontribuyenteclient").val();
     var iva = parseFloat($("#iva").val());
-    var iva_entre = parseFloat($("#iva_entre").val());
+    var iva_entre = parseFloat($("#iva_entre").val()) || 1.13; // Valor por defecto si no está definido
     //var typecontriclient = $("#typecontribuyenteclient").val();
     var retencion=0.00;
     var pricevalue;
@@ -677,11 +683,18 @@ function searchproductcode(codeproduct) {
         method: "GET",
         success: function (response) {
             $.each(response, function (index, value) {
+                console.log('Producto por código recibido:', value);
+                console.log('Tipo de documento:', typedoc);
+                console.log('IVA entre:', iva_entre);
+                console.log('Precio original:', value.price);
+
                 if(typedoc=='6' || typedoc=='8'){
                     pricevalue = parseFloat(value.price);
                 }else{
                     pricevalue = parseFloat(value.price/iva_entre);
                 }
+
+                console.log('Precio calculado por código:', pricevalue);
                 $("#psearch").val(value.id).trigger("change.select2");
                 $("#codesearch").val(value.code);
                 $("#precio").val(pricevalue.toFixed(2));
@@ -1268,6 +1281,15 @@ function creardocuments() {
                         success: function (response) {
                             //console.log(response);
                             if (response.res == 1) {
+                                // Si viene información del ticket automático, guardarla
+                                if (response.ticket_auto && response.ticket_url) {
+                                    response.ticket_data = {
+                                        auto: true,
+                                        url: response.ticket_url,
+                                        print_url: response.ticket_print_url,  // Nueva URL de impresión directa
+                                        sale_id: response.sale_id
+                                    };
+                                }
                                 resolve(response);
                             } else if (response.res == 0) {
                                 reject("Algo salió mal");
@@ -1285,10 +1307,58 @@ function creardocuments() {
                 // Limpiar localStorage al finalizar exitosamente
                 localStorage.removeItem('corr_sale_id');
 
+                                // Abrir ticket automáticamente si está configurado Y habilitado por el usuario
+                const ticketAutoEnabled = localStorage.getItem('ticket_auto_enabled') !== 'false';
+                if (result.value.ticket_data && result.value.ticket_data.auto && ticketAutoEnabled) {
+                    console.log('🎫 Imprimiendo ticket automáticamente para venta #' + result.value.ticket_data.sale_id);
+
+                    // Intentar impresión directa del servidor primero
+                    if (result.value.ticket_data.print_url) {
+                        fetch(result.value.ticket_data.print_url)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log('✅ Ticket impreso automáticamente en:', data.printer);
+                                } else {
+                                    console.log('⚠️ Impresión directa falló, usando navegador');
+                                    // Fallback: abrir en ventana
+                                    const ticketWindow = window.open(
+                                        result.value.ticket_data.url,
+                                        'ticket_auto_' + result.value.ticket_data.sale_id,
+                                        'width=400,height=500,scrollbars=no,resizable=no,menubar=no,toolbar=no,location=no,status=no'
+                                    );
+                                }
+                            })
+                            .catch(error => {
+                                console.error('❌ Error en impresión automática:', error);
+                                // Fallback: abrir en ventana
+                                const ticketWindow = window.open(
+                                    result.value.ticket_data.url,
+                                    'ticket_auto_' + result.value.ticket_data.sale_id,
+                                    'width=400,height=500,scrollbars=no,resizable=no,menubar=no,toolbar=no,location=no,status=no'
+                                );
+                            });
+                    } else {
+                        // Solo navegador disponible
+                        const ticketWindow = window.open(
+                            result.value.ticket_data.url,
+                            'ticket_auto_' + result.value.ticket_data.sale_id,
+                            'width=400,height=500,scrollbars=no,resizable=no,menubar=no,toolbar=no,location=no,status=no'
+                        );
+
+                        if (!ticketWindow) {
+                            console.log('⚠️ No se pudo abrir ventana del ticket (bloqueador de pop-ups)');
+                        }
+                    }
+                }
+
                 Swal.fire({
                     title: "¡DTE Creado correctamente!",
+                    text: result.value.ticket_data && result.value.ticket_data.auto ? "Generando ticket automáticamente..." : "",
                     icon: "success",
                     confirmButtonText: "Ok",
+                    timer: result.value.ticket_data && result.value.ticket_data.auto ? 3000 : undefined,
+                    showConfirmButton: true
                 }).then(() => {
                     window.location.href = "index";
                 });
@@ -1568,6 +1638,14 @@ function updateResumenData() {
 
     // 4. Actualizar total de venta
     var totalVenta = $("#ventatotall").text() || "$ 0.00";
+    // También intentar obtener del campo hidden como fallback
+    if (totalVenta === "$ 0.00" || totalVenta === "$0.00") {
+        var totalHidden = $("#ventatotallhidden").val();
+        if (totalHidden && parseFloat(totalHidden) > 0) {
+            totalVenta = "$ " + parseFloat(totalHidden).toFixed(2);
+        }
+    }
+    console.log('Total para resumen:', totalVenta);
     $("#resumen-total").text(totalVenta);
 
     // 5. Actualizar lista de productos
