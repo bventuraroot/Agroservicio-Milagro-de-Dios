@@ -34,11 +34,11 @@ bootstrap/cache/
 *.sql.zip
 
 # Archivos generados
-public/barcodes/
-public/css/
-public/js/
-public/mix-manifest.json
-public/storage
+#public/barcodes/
+#public/css/
+#public/js/
+#public/mix-manifest.json
+#public/storage
 
 # Carpetas de backup y recursos temporales
 Resplado modulo de ventas roma/
