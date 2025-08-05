@@ -67,7 +67,7 @@ _ide_helper_models.php
 coverage/
 
 # Archivos de caché
-*.cache
+#*.cache
 
 # Carpetas de distribución
 dist/
