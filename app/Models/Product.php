@@ -29,6 +29,11 @@ class Product extends Model
         return $this->belongsTo(Provider::class);
     }
 
+    public function marca()
+    {
+        return $this->belongsTo(Marca::class);
+    }
+
     public function inventory()
     {
         return $this->hasOne(Inventory::class);

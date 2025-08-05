@@ -105,11 +105,48 @@ class MarcaController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Marca  $marca
+     * @param  string  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Marca $marca)
+    public function destroy($id)
     {
-        //
+        try {
+            // Decodificar el ID que viene en base64
+            $decodedId = base64_decode($id);
+
+            // Buscar la marca por ID
+            $marca = Marca::find($decodedId);
+
+            if (!$marca) {
+                return response()->json([
+                    'res' => 0,
+                    'message' => 'Marca no encontrada'
+                ]);
+            }
+
+            // Verificar si la marca está siendo utilizada en productos
+            $productsCount = \App\Models\Product::where('marca_id', $decodedId)->count();
+
+            if ($productsCount > 0) {
+                return response()->json([
+                    'res' => 0,
+                    'message' => 'No se puede eliminar la marca porque está siendo utilizada por ' . $productsCount . ' producto(s)'
+                ]);
+            }
+
+            // Eliminar la marca
+            $marca->delete();
+
+            return response()->json([
+                'res' => 1,
+                'message' => 'Marca eliminada exitosamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'res' => 0,
+                'message' => 'Error al eliminar la marca: ' . $e->getMessage()
+            ]);
+        }
     }
 }

@@ -237,6 +237,69 @@ $.ajax({
     });
    }
 
+   function deleteMarca(id){
+    const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success',
+          cancelButton: 'btn btn-danger'
+        },
+        buttonsStyling: false
+      })
+
+      swalWithBootstrapButtons.fire({
+        title: '¿Eliminar Marca?',
+        text: "Esta acción no tiene retorno",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, Eliminarla!',
+        cancelButtonText: 'No, Cancelar!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "destroy/"+btoa(id),
+                method: "GET",
+                success: function(response){
+                        if(response.res==1){
+                            Swal.fire({
+                                title: 'Eliminada',
+                                text: 'La marca ha sido eliminada exitosamente',
+                                icon: 'success',
+                                confirmButtonText: 'Ok'
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  location.reload();
+                                }
+                              })
+
+                        }else if(response.res==0){
+                            swalWithBootstrapButtons.fire(
+                                'Problemas!',
+                                'Algo sucedió y no se pudo eliminar la marca, favor comunicarse con el administrador.',
+                                'error'
+                              )
+                        }
+                },
+                error: function(xhr, status, error){
+                    swalWithBootstrapButtons.fire(
+                        'Error!',
+                        'No se pudo eliminar la marca. Error: ' + error,
+                        'error'
+                      )
+                }
+            });
+        } else if (
+          result.dismiss === Swal.DismissReason.cancel
+        ) {
+          swalWithBootstrapButtons.fire(
+            'Cancelado',
+            'No hemos hecho ninguna acción :)',
+            'error'
+          )
+        }
+      })
+   }
+
    function deleteProvider(id){
     const swalWithBootstrapButtons = Swal.mixin({
         customClass: {
