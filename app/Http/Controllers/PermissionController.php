@@ -154,6 +154,12 @@ class PermissionController extends Controller
                 "slug" => "credit.index"
             ],
             [
+                "url" => "/quotations/index",
+                "name" => "Cotizaciones",
+                "icon" => "menu-icon fa-solid fa-file-invoice",
+                "slug" => "quotations.index"
+            ],
+            [
                 "url" => "/report/index",
                 "name" => "Reportes",
                 "icon" => "menu-icon fa-solid fa-line-chart",

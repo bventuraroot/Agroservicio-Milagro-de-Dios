@@ -26,6 +26,7 @@ use App\Http\Controllers\CorrelativoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\QuotationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,6 +143,30 @@ Route::group(['prefix' => 'provider', 'as' => 'provider.'], function(){
         Route::get('destroy/{id}', [MarcaController::class, 'destroy'])->name('destroy');
         Route::get('getpermission', [MarcaController::class, 'getpermission'])->name('getpermission');
 
+    });
+
+    Route::group(['prefix' => 'quotations', 'as' => 'quotations.'], function(){
+        Route::get('index', [QuotationController::class, 'index'])->name('index');
+        Route::get('create', [QuotationController::class, 'create'])->name('create');
+        Route::post('store', [QuotationController::class, 'store'])->name('store');
+        Route::get('show/{id}', [QuotationController::class, 'show'])->name('show');
+        Route::get('edit/{id}', [QuotationController::class, 'edit'])->name('edit');
+        Route::patch('update/{id}', [QuotationController::class, 'update'])->name('update');
+        Route::get('destroy/{id}', [QuotationController::class, 'destroy'])->name('destroy');
+
+        // Rutas para cambiar estado
+        Route::patch('change-status/{id}', [QuotationController::class, 'changeStatus'])->name('changeStatus');
+
+        // Rutas para PDF
+        Route::get('pdf/{id}', [QuotationController::class, 'generatePDF'])->name('pdf');
+        Route::get('download/{id}', [QuotationController::class, 'downloadPDF'])->name('download');
+
+        // Rutas para correo
+        Route::post('send-email/{id}', [QuotationController::class, 'sendEmail'])->name('sendEmail');
+
+        // Rutas AJAX
+        Route::get('get-quotations', [QuotationController::class, 'getQuotations'])->name('getQuotations');
+        Route::get('get-quotation/{id}', [QuotationController::class, 'getQuotation'])->name('getQuotation');
     });
 
 Route::group(['prefix' => 'product', 'as' => 'product.'], function(){
@@ -308,6 +333,32 @@ Route::group(['prefix' => 'api/correlativos', 'as' => 'correlativos.api.'], func
     Route::post('validar-disponibilidad', [\App\Http\Controllers\CorrelativoController::class, 'apiValidarDisponibilidad'])->name('validar-disponibilidad');
     Route::get('estadisticas', [\App\Http\Controllers\CorrelativoController::class, 'apiEstadisticas'])->name('estadisticas');
     Route::get('por-empresa', [\App\Http\Controllers\CorrelativoController::class, 'porEmpresa'])->name('por-empresa-api');
+});
+
+// Rutas de Cotizaciones
+Route::group(['prefix' => 'cotizaciones', 'as' => 'cotizaciones.'], function(){
+    // Rutas CRUD principales
+    Route::get('index', [QuotationController::class, 'index'])->name('index');
+    Route::get('create', [QuotationController::class, 'create'])->name('create');
+    Route::post('store', [QuotationController::class, 'store'])->name('store');
+    Route::get('show/{id}', [QuotationController::class, 'show'])->name('show');
+    Route::get('edit/{id}', [QuotationController::class, 'edit'])->name('edit');
+    Route::patch('update/{id}', [QuotationController::class, 'update'])->name('update');
+    Route::get('destroy/{id}', [QuotationController::class, 'destroy'])->name('destroy');
+
+    // Rutas para cambiar estado
+    Route::patch('change-status/{id}', [QuotationController::class, 'changeStatus'])->name('changeStatus');
+
+    // Rutas para PDF
+    Route::get('pdf/{id}', [QuotationController::class, 'generatePDF'])->name('pdf'); 
+    Route::get('download/{id}', [QuotationController::class, 'downloadPDF'])->name('download');
+
+    // Rutas para correo
+    Route::post('send-email/{id}', [QuotationController::class, 'sendEmail'])->name('sendEmail');
+
+    // Rutas AJAX
+    Route::get('get-quotations', [QuotationController::class, 'getQuotations'])->name('getQuotations');
+    Route::get('get-quotation/{id}', [QuotationController::class, 'getQuotation'])->name('getQuotation');
 });
 
 
