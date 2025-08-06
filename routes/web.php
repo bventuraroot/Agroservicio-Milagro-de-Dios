@@ -209,6 +209,7 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::get('destroysaledetail/{idsaledetail}', [SaleController::class, 'destroysaledetail'])->name('destroysaledetail');
         Route::get('ncr/{id_sale}', [SaleController::class, 'ncr'])->name('ncr');
         Route::get('envia_correo', [SaleController::class, 'envia_correo'])->name('envia_correo');
+        Route::post('enviar_correo_offline', [SaleController::class, 'enviar_correo_offline'])->name('enviar_correo_offline');
         Route::get('print/{id}', [SaleController::class, 'print'])->name('print');
         Route::get('destinos', [SaleController::class, 'destinos'])->name('destinos');
         Route::get('linea', [SaleController::class, 'linea'])->name('linea');

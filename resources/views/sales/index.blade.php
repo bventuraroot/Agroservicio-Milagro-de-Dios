@@ -40,9 +40,8 @@
     <script>
         function EnviarCorreo(id_factura,correo,numero) {
             (async () => {
-              //const csrfToken = document.head.querySelector('meta[name="csrf-token"]').content;
                 _token = '{{ csrf_token() }}';
-                //alert(_token);
+
                 const { value: email } = await Swal.fire({
                     title: 'Mandar comprobante por Correo',
                     input: 'email',
@@ -50,26 +49,80 @@
                     inputPlaceholder: 'Introduzca el Correo',
                     inputValue: correo
                 });
-                url = "{{ route('sale.envia_correo') }}";
+
                 if (email) {
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Enviando correo...',
+                        text: 'Por favor espere mientras se genera y envía el PDF',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const url = "{{ route('sale.enviar_correo_offline') }}";
+
                     $.ajax({
-                    url: url,
-                    type:'GET',
-                    data: {
-                    id_factura : id_factura,
-                    email: email,
-                    numero: numero,
-                    _token : _token
+                        url: url,
+                        type: 'POST',
+                        data: {
+                            id_factura: id_factura,
+                            email: email,
+                            numero: numero,
+                            nombre_cliente: '', // Parámetro requerido por la nueva función
+                            _token: _token
+                        },
+                        success: function(response, status) {
 
-                    },
-                    success: function(data,status)
-                    {
-                        Swal.fire(`Comprobante Enviado a: ${email}`)
+                            if (response.success) {
+                                Swal.fire({
+                                    title: '¡Correo Enviado!',
+                                    html: `
+                                        <p>Comprobante enviado exitosamente a:</p>
+                                        <strong>${email}</strong>
+                                        <br><br>
+                                        <small class="text-muted">Factura: ${response.data?.numero_factura || numero}</small>
+                                    `,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: response.message || 'Error al enviar el correo',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
 
-                    },
-                    error: function(){
-                    mensaje("Creación de Factura", "No se pudo Actualizar", "error")
-                    },
+                            let errorMessage = 'Error al enviar el correo';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.status === 404) {
+                                errorMessage = 'Función no encontrada. Verifique la configuración.';
+                            } else if (xhr.status === 405) {
+                                errorMessage = 'Método no permitido. Contacte al administrador.';
+                            } else if (xhr.status === 500) {
+                                errorMessage = 'Error interno del servidor.';
+                            } else if (xhr.status === 0) {
+                                errorMessage = 'Error de conexión. Verifique su internet.';
+                            }
+
+                            Swal.fire({
+                                title: 'Error de Envío',
+                                html: `
+                                    <p>${errorMessage}</p>
+                                    <hr>
+                                    <small class="text-muted">Código: ${xhr.status}</small>
+                                `,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
                     });
                 }
             })()
