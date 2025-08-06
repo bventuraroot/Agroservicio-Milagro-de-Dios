@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div class="flex flex-col justify-center items-center min-h-screen bg-gray-50">
         <div class="p-6 mt-12 w-full max-w-sm bg-white rounded-md border border-gray-200">
-            <h2 class="mb-1 text-xl font-semibold text-center text-gray-800">Restablecer Contraseña</h2>
+            <h2 class="mb-1 text-xl font-semibold text-center text-gray-800">Restablecer contraseña</h2>
             <p class="mb-6 text-sm text-center text-gray-500">Ingresa tu nueva contraseña para tu cuenta.</p>
             <form method="POST" action="{{ route('password.store') }}">
                 @csrf
@@ -27,7 +27,7 @@
                 </div>
 
                 <x-primary-button class="justify-center w-full">
-                    {{ __('Restablecer Contraseña') }}
+                    {{ __('Restablecer contraseña') }}
                 </x-primary-button>
             </form>
         </div>
