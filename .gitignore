@@ -71,7 +71,7 @@ coverage/
 
 # Carpetas de distribución
 dist/
-build/
+#build/
 
 # Archivos de Docker (si no los usas)
 docker-compose.override.yml
