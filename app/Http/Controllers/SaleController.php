@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Session;
 use App\Mail\EnviarCorreo;
+use App\Mail\EnviarFacturaOffline;
 use App\Models\Correlativo;
 use Illuminate\Http\JsonResponse;
 
