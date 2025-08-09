@@ -55,7 +55,7 @@ COPY . /var/www
 COPY package*.json ./
 
 # Instalar dependencias de Node.js
-RUN npm ci --only=production
+RUN npm ci
 
 # Compilar assets
 RUN npm run build

@@ -119,16 +119,85 @@ class PreSaleController extends Controller
     }
 
     /**
-     * Buscar producto por código de barras
+     * Buscar producto por código de barras o nombre
      */
     public function searchProduct(Request $request)
     {
         $request->validate([
-            'code' => 'required|string|max:50'
+            'code' => 'nullable|string|max:50',
+            'name' => 'nullable|string|max:255'
         ]);
 
-        $product = Product::where('code', $request->code)
-                         ->first();
+        // Si no se proporciona ni código ni nombre
+        if (!$request->code && !$request->name) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe proporcionar un código de barras o nombre de producto'
+            ], 400);
+        }
+
+        $query = Product::query();
+
+        // Búsqueda por código de barras
+        if ($request->code) {
+            $query->where('code', $request->code);
+        }
+
+        // Búsqueda por nombre (búsqueda parcial)
+        if ($request->name) {
+            $query->where('name', 'LIKE', '%' . $request->name . '%');
+        }
+
+        // Si se busca por nombre, limitar resultados y ordenar por nombre
+        if ($request->name && !$request->code) {
+            $products = $query->limit(10)
+                             ->orderBy('name')
+                             ->get();
+
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontraron productos con ese nombre'
+                ], 404);
+            }
+
+            // Si solo hay un producto, devolverlo directamente
+            if ($products->count() === 1) {
+                $product = $products->first();
+                return response()->json([
+                    'success' => true,
+                    'product' => [
+                        'id' => $product->id,
+                        'code' => $product->code,
+                        'name' => $product->name,
+                        'description' => $product->description,
+                        'price' => $product->price,
+                        'stock' => $product->stock ?? 0,
+                        'image' => $product->image ?? 'default.png'
+                    ]
+                ]);
+            }
+
+            // Si hay múltiples productos, devolver la lista
+            return response()->json([
+                'success' => true,
+                'multiple_products' => true,
+                'products' => $products->map(function($product) {
+                    return [
+                        'id' => $product->id,
+                        'code' => $product->code,
+                        'name' => $product->name,
+                        'description' => $product->description,
+                        'price' => $product->price,
+                        'stock' => $product->stock ?? 0,
+                        'image' => $product->image ?? 'default.png'
+                    ];
+                })
+            ]);
+        }
+
+        // Búsqueda por código de barras (comportamiento original)
+        $product = $query->first();
 
         if (!$product) {
             return response()->json([
@@ -145,7 +214,7 @@ class PreSaleController extends Controller
                 'name' => $product->name,
                 'description' => $product->description,
                 'price' => $product->price,
-                'stock' => $product->stock,
+                'stock' => $product->stock ?? 0,
                 'image' => $product->image ?? 'default.png'
             ]
         ]);

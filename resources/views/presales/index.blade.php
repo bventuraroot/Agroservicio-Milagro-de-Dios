@@ -67,6 +67,13 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+
+    .imagen-producto-select2 {
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
 </style>
 @endsection
 
@@ -143,7 +150,7 @@
 
                     <!-- Product Scanner -->
                     <div class="mb-4 row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="barcode-input">
                                 <i class="ti ti-barcode me-1"></i>
                                 Código de Barras
@@ -155,7 +162,17 @@
                                    autofocus>
                             <div class="form-text">Use la pistola de código de barras o escriba manualmente</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="product-name-select">
+                                <i class="ti ti-search me-1"></i>
+                                Buscar por Nombre
+                            </label>
+                            <select class="select2psearch form-select form-control-lg" id="product-name-select" name="product-name-select">
+                                <option value="">Seleccionar producto</option>
+                            </select>
+                            <div class="form-text">Búsqueda por nombre de producto</div>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label" for="quantity-input">Cantidad</label>
                             <input type="number"
                                    id="quantity-input"
@@ -164,7 +181,7 @@
                                    min="1"
                                    max="999">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">&nbsp;</label>
                             <button type="button"
                                     class="btn btn-primary w-100"
@@ -453,7 +470,8 @@
             cancel: '{{ route("presales.cancel") }}',
             dailyStats: '{{ route("presales.daily-stats") }}',
             printReceipt: '{{ route("presales.print-receipt") }}',
-            clients: '{{ route("presales.clients") }}'
+            clients: '{{ route("presales.clients") }}',
+            sessionInfo: '{{ route("presales.session-info") }}'
         }
     };
 </script>

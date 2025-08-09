@@ -57,6 +57,102 @@ class PreSalesManager {
                 this.cancelSession();
             }
         });
+
+        // Inicializar Select2 para productos
+        this.initializeProductSelect2();
+    }
+
+    initializeProductSelect2() {
+        // Función para formatear el estado del select2 (igual que en ventas)
+        const formatState = (state) => {
+            if (state.id === '' || state.id === '0') {
+                return state.text;
+            }
+            // Verificar que state.title existe y no es undefined
+            const imageSrc = state.title && state.title !== 'undefined' ? state.title : 'default.png';
+            const $state = $(
+                '<span><img src="' + window.presalesConfig.baseUrl + '/assets/img/products/' + imageSrc + '" class="imagen-producto-select2" /> ' + state.text + '</span>'
+            );
+            return $state;
+        };
+
+        // Inicializar Select2
+        const $select = $('#product-name-select');
+        if ($select.length) {
+            $select.wrap('<div class="position-relative"></div>').select2({
+                placeholder: "Seleccionar Producto",
+                dropdownParent: $select.parent(),
+                templateResult: formatState,
+                templateSelection: formatState
+            });
+
+            // Cargar todos los productos
+            this.loadAllProducts();
+        }
+    }
+
+    loadAllProducts() {
+        $.ajax({
+            url: window.presalesConfig.baseUrl + '/product/getproductall',
+            method: 'GET',
+            success: (response) => {
+                const $select = $('#product-name-select');
+                $select.empty().append('<option value="">Seleccionar producto</option>');
+
+                response.forEach((product) => {
+                    const optionText = product.name.toUpperCase() + ' | Descripción: ' + product.description + ' | Proveedor: ' + product.nameprovider;
+                    $select.append(
+                        '<option value="' + product.id + '" title="' + (product.image || 'default.png') + '">' + optionText + '</option>'
+                    );
+                });
+
+                // Configurar el evento change
+                $select.off('change').on('change', (e) => {
+                    const selectedValue = $(e.target).val();
+                    if (selectedValue && selectedValue !== '') {
+                        this.searchProductById(selectedValue);
+                    }
+                });
+            },
+            error: (xhr) => {
+                console.error('Error cargando productos:', xhr);
+                this.showAlert('Error', 'Error al cargar la lista de productos', 'error');
+            }
+        });
+    }
+
+    searchProductById(productId) {
+        if (!productId || !this.currentSaleId) {
+            this.showAlert('Error', 'Debe iniciar una sesión primero', 'error');
+            return;
+        }
+
+        $.ajax({
+            url: window.presalesConfig.baseUrl + '/product/getproductid/' + btoa(productId),
+            method: 'GET',
+            success: (response) => {
+                if (response && response.length > 0) {
+                    const product = response[0];
+                    this.currentProduct = {
+                        id: product.id,
+                        code: product.code,
+                        name: product.name,
+                        description: product.description,
+                        price: product.price,
+                        stock: product.stock || 0,
+                        image: product.image || 'default.png'
+                    };
+
+                    this.showProductInfo();
+                    $('#add-product-btn').prop('disabled', false);
+                    $('#product-name-select').val('').trigger('change');
+                }
+            },
+            error: (xhr) => {
+                console.error('Error buscando producto por ID:', xhr);
+                this.showAlert('Error', 'Error al buscar el producto', 'error');
+            }
+        });
     }
 
     focusBarcodeInput() {
@@ -253,15 +349,16 @@ class PreSalesManager {
         }
 
         $.ajax({
-            url: '/presales/search-product',
+            url: window.presalesConfig.routes.searchProduct,
             method: 'POST',
             data: {
                 code: code,
                 company_id: this.currentCompanyId,
-                _token: $('meta[name="csrf-token"]').attr('content')
+                _token: window.presalesConfig.csrfToken
             },
             success: (response) => {
                 if (response.success) {
+                    // Producto único encontrado
                     this.currentProduct = response.product;
                     this.showProductInfo();
                     $('#add-product-btn').prop('disabled', false);
@@ -289,7 +386,7 @@ class PreSalesManager {
         $('#product-code').text(this.currentProduct.code);
         $('#product-price').text('$' + parseFloat(this.currentProduct.price).toFixed(2));
         $('#product-stock').text(this.currentProduct.stock);
-        $('#product-image').attr('src', '/assets/img/products/' + this.currentProduct.image);
+        $('#product-image').attr('src', window.presalesConfig.baseUrl + '/assets/img/products/' + this.currentProduct.image);
 
         this.updateProductTotal();
         $('#product-info').show();
@@ -310,14 +407,14 @@ class PreSalesManager {
         const price = this.currentProduct.price;
 
         $.ajax({
-            url: '/presales/add-product',
+            url: window.presalesConfig.routes.addProduct,
             method: 'POST',
             data: {
                 sale_id: this.currentSaleId,
                 product_id: this.currentProduct.id,
                 quantity: quantity,
                 price: price,
-                _token: $('meta[name="csrf-token"]').attr('content')
+                _token: window.presalesConfig.csrfToken
             },
             success: (response) => {
                 if (response.success) {
@@ -345,11 +442,11 @@ class PreSalesManager {
         if (!this.currentSaleId) return;
 
         $.ajax({
-            url: '/presales/get-details',
+            url: window.presalesConfig.routes.getDetails,
             method: 'POST',
             data: {
                 sale_id: this.currentSaleId,
-                _token: $('meta[name="csrf-token"]').attr('content')
+                _token: window.presalesConfig.csrfToken
             },
             success: (response) => {
                 if (response.success) {
@@ -394,7 +491,7 @@ class PreSalesManager {
                     <td>${detail.amountp}</td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <img src="/assets/img/products/${detail.product.image || 'default.png'}"
+                            <img src="${window.presalesConfig.baseUrl}/assets/img/products/${detail.product.image || 'default.png'}"
                                  class="rounded me-2"
                                  style="width: 30px; height: 30px; object-fit: cover;">
                             <div>
@@ -408,7 +505,7 @@ class PreSalesManager {
                     <td class="text-center">
                         <button type="button"
                                 class="btn btn-sm btn-outline-danger"
-                                onclick="preSalesManager.removeProduct(${detail.id})">
+                                onclick="window.preSalesManager.removeProduct(${detail.id})">
                             <i class="ti ti-trash"></i>
                         </button>
                     </td>
@@ -443,11 +540,11 @@ class PreSalesManager {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/presales/remove-product',
+                    url: window.presalesConfig.routes.removeProduct,
                     method: 'POST',
                     data: {
                         detail_id: detailId,
-                        _token: $('meta[name="csrf-token"]').attr('content')
+                        _token: window.presalesConfig.csrfToken
                     },
                     success: (response) => {
                         if (response.success) {
@@ -477,7 +574,7 @@ class PreSalesManager {
         }
 
         $.ajax({
-            url: '/presales/finalize',
+            url: window.presalesConfig.routes.finalize,
             method: 'POST',
             data: {
                 sale_id: this.currentSaleId,
@@ -485,7 +582,7 @@ class PreSalesManager {
                 client_id: clientId,
                 acuenta: acuenta,
                 waytopay: waytopay,
-                _token: $('meta[name="csrf-token"]').attr('content')
+                _token: window.presalesConfig.csrfToken
             },
             success: (response) => {
                 if (response.success) {
@@ -507,8 +604,6 @@ class PreSalesManager {
         });
     }
 
-
-
     cancelSession() {
         if (!this.currentSaleId) return;
 
@@ -522,11 +617,11 @@ class PreSalesManager {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/presales/cancel',
+                    url: window.presalesConfig.routes.cancel,
                     method: 'POST',
                     data: {
                         sale_id: this.currentSaleId,
-                        _token: $('meta[name="csrf-token"]').attr('content')
+                        _token: window.presalesConfig.csrfToken
                     },
                     success: (response) => {
                         if (response.success) {
@@ -579,7 +674,7 @@ class PreSalesManager {
 
     showDailyStats() {
         $.ajax({
-            url: '/presales/daily-stats',
+            url: window.presalesConfig.routes.dailyStats,
             method: 'GET',
             success: (response) => {
                 if (response.success) {
@@ -594,7 +689,7 @@ class PreSalesManager {
 
     loadClients() {
         $.ajax({
-            url: '/presales/clients',
+            url: window.presalesConfig.routes.clients,
             method: 'GET',
             success: (response) => {
                 if (response.success) {
@@ -614,7 +709,7 @@ class PreSalesManager {
         if (!this.currentSaleId) return;
 
         // Abrir ventana de impresión
-        window.open(`/presales/print-receipt?sale_id=${this.currentSaleId}`, '_blank');
+        window.open(`${window.presalesConfig.routes.printReceipt}?sale_id=${this.currentSaleId}`, '_blank');
     }
 
     showAlert(title, message, type) {
@@ -641,7 +736,7 @@ class PreSalesManager {
         if (!this.currentSaleId) return;
 
         $.ajax({
-            url: '/presales/session-info',
+            url: window.presalesConfig.routes.sessionInfo,
             method: 'GET',
             data: {
                 session_id: this.currentSaleId
