@@ -14,6 +14,8 @@
 
 @section('page-script')
     <script src="{{ asset('assets/js/forms-quotation.js') }}"></script>
+    <!-- Script para envío de facturas por correo -->
+    <script src="{{ asset('assets/js/enviar-factura-correo.js') }}"></script>
 @endsection
 
 @section('title', 'Ver Cotización - ' . $quotation->quote_number)

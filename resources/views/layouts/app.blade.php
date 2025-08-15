@@ -12,6 +12,10 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+                        <!-- AI Chat Styles and Scripts -->
+                <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}">
+                <script src="{{ asset('js/ai-chat-simple.js') }}" defer></script>
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
@@ -31,5 +35,8 @@
                 {{ $slot }}
             </main>
         </div>
+
+        <!-- AI Chat Component -->
+        @include('components.ai-chat')
     </body>
 </html>

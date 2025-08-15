@@ -154,10 +154,16 @@ class PermissionController extends Controller
                 "slug" => "credit.index"
             ],
             [
-                "url" => "/quotations/index",
+                "url" => "/cotizaciones/index",
                 "name" => "Cotizaciones",
                 "icon" => "menu-icon fa-solid fa-file-invoice",
-                "slug" => "quotations.index"
+                "slug" => "cotizaciones.index"
+            ],
+            [
+                "url" => "/ai-chat/",
+                "name" => "Chat IA",
+                "icon" => "menu-icon fa-solid fa-robot",
+                "slug" => "ai-chat"
             ],
             [
                 "url" => "/report/index",

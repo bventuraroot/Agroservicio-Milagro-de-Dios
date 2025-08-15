@@ -35,98 +35,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
 
-@section('page-script')
-    <script src="{{ asset('assets/js/app-purchase-list.js') }}"></script>
-    <script src="{{ asset('assets/js/forms-purchase.js') }}"></script>
 
-    <script>
-    console.log('Script de productos cargado correctamente');
-
-    let products = [];
-    let selectedProducts = [];
-    let productRowIndex = 0;
-    let currentRowIndex = 0;
-
-    $(document).ready(function() {
-        console.log('Página cargada, inicializando sistema de productos...');
-        loadProducts();
-
-        // Eventos
-        $('#addProductBtn').click(addProductRow);
-        $('#productSearch').on('input', filterProducts);
-
-        // Modificar el envío del formulario
-        $('#addpurchaseForm').submit(function(e) {
-            e.preventDefault();
-
-            if (selectedProducts.length === 0) {
-                alert('Debe agregar al menos un producto');
-                return;
-            }
-
-                        // Verificar que hay productos seleccionados
-            const validProducts = Object.values(selectedProducts).filter(product => product && product.product_id);
-            if (validProducts.length === 0) {
-                alert('Debe agregar al menos un producto');
-                return;
-            }
-
-            // Enviar formulario
-            submitForm();
-        });
-    });
-
-    function loadProducts() {
-        console.log('Cargando productos...');
-        $.get('/purchase/products', function(response) {
-            console.log('Respuesta recibida:', response);
-            if (response.success) {
-                products = response.products;
-                console.log('Productos cargados:', products.length);
-                renderProductTable();
-            } else {
-                console.error('Error al cargar productos:', response.message);
-            }
-        }).fail(function(xhr, status, error) {
-            console.error('Error en la petición:', error);
-            console.error('Status:', status);
-            console.error('Response:', xhr.responseText);
-        });
-    }
-
-    function renderProductTable() {
-        console.log('Renderizando tabla de productos...');
-        const tbody = $('#productSelectionTable tbody');
-        tbody.empty();
-
-        if (products.length === 0) {
-            tbody.append('<tr><td colspan="5" class="text-center">No hay productos disponibles</td></tr>');
-            return;
-        }
-
-        products.forEach(product => {
-            console.log('Procesando producto:', product);
-            const row = `
-                <tr>
-                    <td>${product.code || 'N/A'}</td>
-                    <td>${product.name}</td>
-                    <td>${product.provider ? product.provider.razonsocial : 'N/A'}</td>
-                    <td>$${parseFloat(product.price || 0).toFixed(2)}</td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="selectProduct(${product.id})">
-                            Seleccionar
-                        </button>
-                    </td>
-                </tr>
-            `;
-            tbody.append(row);
-        });
-        console.log('Tabla renderizada con', products.length, 'productos');
-    }
-
-    function filterProducts() {
-        const searchTerm = $('#productSearch').val().toLowerCase();
-        const rows = $('#productSelectionTable tbody tr');
 
         rows.each(function() {
             const text = $(this).text().toLowerCase();
@@ -222,7 +131,7 @@
         $('#productModal').modal('show');
     }
 
-            function calculateRowTotal(rowIndex) {
+    function calculateRowTotal(rowIndex) {
         const row = $(`#productRow_${rowIndex}`);
         const quantity = parseInt(row.find('.quantity').val()) || 0;
         const unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
@@ -232,12 +141,12 @@
         row.find('.subtotal').text(`$${subtotal.toFixed(2)}`);
 
         updateSelectedProduct(rowIndex);
-        calculateTotalsFromProducts();
+        calculateTotals();
     }
 
-            function updateSelectedProduct(rowIndex) {
+    function updateSelectedProduct(rowIndex) {
         const row = $(`#productRow_${rowIndex}`);
-
+        
         selectedProducts[rowIndex] = {
             product_id: parseInt(row.find('.product-id').val()),
             quantity: parseInt(row.find('.quantity').val()) || 0,
@@ -254,81 +163,31 @@
         calculateTotals();
     }
 
-        function calculateTotals() {
-        // Obtener valores manuales de los campos
-        const exenta = parseFloat($('#exenta').val()) || 0;
-        const gravada = parseFloat($('#gravada').val()) || 0;
-        const iva = parseFloat($('#iva').val()) || 0;
-        const contrans = parseFloat($('#contrans').val()) || 0;
-        const fovial = parseFloat($('#fovial').val()) || 0;
-        const cesc = parseFloat($('#cesc').val()) || 0;
-        const iretenido = parseFloat($('#iretenido').val()) || 0;
-        const others = parseFloat($('#others').val()) || 0;
-
-        // Calcular total automáticamente si no se ha modificado manualmente
-        const calculatedTotal = exenta + gravada + iva + contrans + fovial + cesc + iretenido + others;
-
-        // Solo actualizar el total si no se ha modificado manualmente
-        if (!$('#total').data('manually-changed')) {
-            $('#total').val(calculatedTotal.toFixed(2));
-        }
-    }
-
-    function updateTotals() {
-        // Marcar que el total se ha modificado manualmente
-        $('#total').data('manually-changed', true);
-        calculateTotals();
-    }
-
-    function calculateTotalsFromProducts() {
+    function calculateTotals() {
         let subtotal = 0;
         let totalIva = 0;
-
+        let totalAmount = 0;
+        
         Object.values(selectedProducts).forEach(product => {
             const rowSubtotal = product.quantity * product.unit_price;
             const rowIva = rowSubtotal * 0.13;
-
+            const rowTotal = rowSubtotal + rowIva;
+            
             subtotal += rowSubtotal;
             totalIva += rowIva;
+            totalAmount += rowTotal;
         });
-
-        // Actualizar campos automáticamente solo si no se han modificado manualmente
-        //if (!$('#exenta').data('manually-changed')) {
-        //    $('#exenta').val(subtotal.toFixed(2));
-        //}
-        if (!$('#gravada').data('manually-changed')) {
-            $('#gravada').val(subtotal.toFixed(2));
-        }
-        if (!$('#iva').data('manually-changed')) {
-            $('#iva').val(totalIva.toFixed(2));
-        }
-
-        calculateTotals();
+        
+        // Actualizar campos del formulario
+        $('#exenta').val(subtotal.toFixed(2));
+        $('#gravada').val(subtotal.toFixed(2));
+        $('#iva').val(totalIva.toFixed(2));
+        $('#total').val(totalAmount.toFixed(2));
     }
 
-        function submitForm() {
-        // Crear un objeto con todos los datos del formulario
+    function submitForm() {
         const formData = new FormData($('#addpurchaseForm')[0]);
-
-        // Agregar los detalles como array
-        const details = Object.values(selectedProducts).filter(product => product && product.product_id);
-
-        // Agregar cada detalle al FormData
-        details.forEach((detail, index) => {
-            formData.append(`details[${index}][product_id]`, detail.product_id);
-            formData.append(`details[${index}][quantity]`, detail.quantity);
-            formData.append(`details[${index}][unit_price]`, detail.unit_price);
-            if (detail.expiration_date) {
-                formData.append(`details[${index}][expiration_date]`, detail.expiration_date);
-            }
-            if (detail.batch_number) {
-                formData.append(`details[${index}][batch_number]`, detail.batch_number);
-            }
-            if (detail.notes) {
-                formData.append(`details[${index}][notes]`, detail.notes);
-            }
-        });
-
+        
         $.ajax({
             url: $('#addpurchaseForm').attr('action'),
             method: 'POST',
@@ -345,15 +204,7 @@
             },
             error: function(xhr) {
                 const response = xhr.responseJSON;
-                if (response && response.errors) {
-                    let errorMessage = 'Errores de validación:\n';
-                    Object.keys(response.errors).forEach(key => {
-                        errorMessage += `- ${key}: ${response.errors[key].join(', ')}\n`;
-                    });
-                    alert(errorMessage);
-                } else {
-                    alert('Error: ' + (response?.message || 'Error desconocido'));
-                }
+                alert('Error: ' + (response?.message || 'Error desconocido'));
             }
         });
     }
@@ -367,236 +218,14 @@
             }
         });
     }
+
+    function testProductModal() {
+        console.log('Probando modal de productos...');
+        $('#productModal').modal('show');
+        loadProducts();
+    }
     </script>
     @endsection
-
-    <script>
-    // Variables para edición
-    let editSelectedProducts = [];
-    let editProductRowIndex = 0;
-
-    // Eventos para edición
-    $(document).ready(function() {
-        $('#addEditProductBtn').click(addEditProductRow);
-    });
-
-    function addEditProductRow(product = null) {
-        if (!product) {
-            showEditProductModal(editProductRowIndex);
-            return;
-        }
-
-        const row = `
-            <tr id="editProductRow_${editProductRowIndex}">
-                <td>
-                    <input type="text" class="form-control product-name" readonly
-                           value="${product ? product.name : ''}"
-                           onclick="showEditProductModal(${editProductRowIndex})">
-                    <input type="hidden" class="product-id" value="${product ? product.id : ''}">
-                </td>
-                <td>
-                    <input type="number" class="form-control quantity" min="1" value="1"
-                           onchange="calculateEditRowTotal(${editProductRowIndex})">
-                </td>
-                <td>
-                    <input type="number" class="form-control unit-price" min="0" step="0.01"
-                           value="${product ? product.price : ''}"
-                           onchange="calculateEditRowTotal(${editProductRowIndex})">
-                </td>
-                <td>
-                    <span class="subtotal">$0.00</span>
-                </td>
-                <td>
-                    <input type="date" class="form-control expiration-date"
-                           min="${$('#dateedit').val()}"
-                           onchange="updateEditSelectedProduct(${editProductRowIndex})">
-                </td>
-                <td>
-                    <input type="text" class="form-control batch-number"
-                           onchange="updateEditSelectedProduct(${editProductRowIndex})">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeEditProductRow(${editProductRowIndex})">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-
-        $('#editProductsTableBody').append(row);
-        editProductRowIndex++;
-    }
-
-    function showEditProductModal(rowIndex) {
-        currentRowIndex = rowIndex;
-        $('#productModal').modal('show');
-    }
-
-    function calculateEditRowTotal(rowIndex) {
-        const row = $(`#editProductRow_${rowIndex}`);
-        const quantity = parseInt(row.find('.quantity').val()) || 0;
-        const unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
-
-        const subtotal = quantity * unitPrice;
-
-        row.find('.subtotal').text(`$${subtotal.toFixed(2)}`);
-
-        updateEditSelectedProduct(rowIndex);
-        calculateEditTotalsFromProducts();
-    }
-
-    function updateEditSelectedProduct(rowIndex) {
-        const row = $(`#editProductRow_${rowIndex}`);
-
-        editSelectedProducts[rowIndex] = {
-            product_id: parseInt(row.find('.product-id').val()),
-            quantity: parseInt(row.find('.quantity').val()) || 0,
-            unit_price: parseFloat(row.find('.unit-price').val()) || 0,
-            expiration_date: row.find('.expiration-date').val() || null,
-            batch_number: row.find('.batch-number').val() || null,
-            notes: null
-        };
-    }
-
-    function removeEditProductRow(rowIndex) {
-        $(`#editProductRow_${rowIndex}`).remove();
-        delete editSelectedProducts[rowIndex];
-        calculateEditTotalsFromProducts();
-    }
-
-    function calculateEditTotalsFromProducts() {
-        let subtotal = 0;
-        let totalIva = 0;
-
-        Object.values(editSelectedProducts).forEach(product => {
-            const rowSubtotal = product.quantity * product.unit_price;
-            const rowIva = rowSubtotal * 0.13;
-
-            subtotal += rowSubtotal;
-            totalIva += rowIva;
-        });
-
-        // Actualizar campos automáticamente solo si no se han modificado manualmente
-        if (!$('#gravadaedit').data('manually-changed')) {
-            $('#gravadaedit').val(subtotal.toFixed(2));
-        }
-        if (!$('#ivaedit').data('manually-changed')) {
-            $('#ivaedit').val(totalIva.toFixed(2));
-        }
-
-        calculateEditTotals();
-    }
-
-    function calculateEditTotals() {
-        // Obtener valores manuales de los campos
-        const exenta = parseFloat($('#exentaedit').val()) || 0;
-        const gravada = parseFloat($('#gravadaedit').val()) || 0;
-        const iva = parseFloat($('#ivaedit').val()) || 0;
-        const contrans = parseFloat($('#contransedit').val()) || 0;
-        const fovial = parseFloat($('#fovialedit').val()) || 0;
-        const cesc = parseFloat($('#cescedit').val()) || 0;
-        const iretenido = parseFloat($('#iretenidoedit').val()) || 0;
-        const others = parseFloat($('#othersedit').val()) || 0;
-
-        // Calcular total automáticamente si no se ha modificado manualmente
-        const calculatedTotal = exenta + gravada + iva + contrans + fovial + cesc + iretenido + others;
-
-        // Solo actualizar el total si no se ha modificado manualmente
-        if (!$('#totaledit').data('manually-changed')) {
-            $('#totaledit').val(calculatedTotal.toFixed(2));
-        }
-    }
-
-    // Modificar la función selectProduct para que funcione tanto en nuevo como en edición
-    function selectProduct(productId) {
-        const product = products.find(p => p.id === productId);
-        if (product) {
-            if (currentRowIndex !== undefined) {
-                // Si estamos en modo edición
-                addEditProductRow(product);
-            } else {
-                // Si estamos en modo nuevo
-                addProductRow(product);
-            }
-            $('#productModal').modal('hide');
-        }
-    }
-
-    // Modificar la función editpurchase para cargar los productos existentes
-    function loadPurchaseDetails(purchaseId) {
-        $.get(`/purchase/details/${purchaseId}`, function(response) {
-            if (response.success) {
-                // Limpiar productos existentes
-                editSelectedProducts = [];
-                editProductRowIndex = 0;
-                $('#editProductsTableBody').empty();
-
-                // Cargar productos existentes
-                response.details.forEach(detail => {
-                    const product = {
-                        id: detail.product_id,
-                        name: detail.product.name,
-                        price: detail.unit_price
-                    };
-
-                    addEditProductRow(product);
-
-                    // Llenar los campos con los valores existentes
-                    const row = $(`#editProductRow_${editProductRowIndex - 1}`);
-                    row.find('.quantity').val(detail.quantity);
-                    row.find('.unit-price').val(detail.unit_price);
-                    row.find('.expiration-date').val(detail.expiration_date);
-                    row.find('.batch-number').val(detail.batch_number);
-
-                    calculateEditRowTotal(editProductRowIndex - 1);
-                });
-            }
-        });
-    }
-
-    // Función para ver detalles de la compra
-    function viewPurchaseDetails(purchaseId) {
-        $.get(`/purchase/details/${purchaseId}`, function(response) {
-            if (response.success) {
-                // Llenar información general
-                $('#viewNumber').text(response.purchase.number);
-                $('#viewDate').text(new Date(response.purchase.date).toLocaleDateString('es-ES'));
-                $('#viewProvider').text(response.purchase.provider ? response.purchase.provider.razonsocial : 'N/A');
-                $('#viewCompany').text(response.purchase.company ? response.purchase.company.name : 'N/A');
-                $('#viewExenta').text('$' + (response.purchase.exenta || '0.00'));
-                $('#viewGravada').text('$' + (response.purchase.gravada || '0.00'));
-                $('#viewIva').text('$' + (response.purchase.iva || '0.00'));
-                $('#viewTotal').text('$' + (response.purchase.total || '0.00'));
-
-                // Llenar tabla de productos
-                const tbody = $('#viewProductsTableBody');
-                tbody.empty();
-
-                response.details.forEach(detail => {
-                    const subtotal = detail.quantity * detail.unit_price;
-                    const row = `
-                        <tr>
-                            <td>
-                                <strong>${detail.product ? detail.product.name : 'N/A'}</strong>
-                                <br><small class="text-muted">${detail.product ? detail.product.code : 'N/A'}</small>
-                            </td>
-                            <td>${detail.quantity}</td>
-                            <td>$${detail.unit_price}</td>
-                            <td>$${subtotal.toFixed(2)}</td>
-                            <td>${detail.expiration_date ? new Date(detail.expiration_date).toLocaleDateString('es-ES') : 'N/A'}</td>
-                            <td>${detail.batch_number || 'N/A'}</td>
-                        </tr>
-                    `;
-                    tbody.append(row);
-                });
-
-                $('#viewPurchaseModal').modal('show');
-            } else {
-                alert('Error al cargar los detalles de la compra');
-            }
-        });
-    }
-    </script>
 
 @section('title', 'Compras')
 
@@ -605,7 +234,7 @@
         <div class="card-header border-bottom">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 card-title">Compras</h5>
-                <div class="gap-2 d-flex">
+                <div class="d-flex gap-2">
                     <button type="button" class="btn btn-warning btn-sm" onclick="window.open('{{ route('purchase.expiring-products-view') }}', '_blank')">
                         <i class="ti ti-alert-triangle"></i> Productos Próximos a Vencer
                     </button>
@@ -651,12 +280,8 @@
                                 <td>{{ $purchase->name_provider }}</td>
                                 <td>
                                         <div class="d-flex align-items-center">
-                                            <a href="javascript: viewPurchaseDetails({{ $purchase->idpurchase }});" class="dropdown-item">
-                                                <i class="ti ti-eye ti-sm me-2"></i>Ver Detalle
-                                            </a>
-                                            <a href="javascript: editpurchase({{ $purchase->idpurchase }});" class="dropdown-item">
-                                                <i class="ti ti-edit ti-sm me-2"></i>Editar
-                                            </a>
+                                            <a href="javascript: editpurchase({{ $purchase->idpurchase }});" class="dropdown-item"><i
+                                                class="ti ti-edit ti-sm me-2"></i>Editar</a>
                                             <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
                                                 data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
                                             <div class="m-0 dropdown-menu dropdown-menu-end">
@@ -750,7 +375,7 @@
             </div>
 
             <!-- Sección de Productos -->
-            <div class="mb-4 col-12">
+            <div class="col-12 mb-4">
                 <h5>Productos de la Compra</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered" id="productsTable">
@@ -758,7 +383,7 @@
                             <tr>
                                 <th>Producto</th>
                                 <th>Cantidad</th>
-                                <th>Costo Unit.</th>
+                                <th>Precio Unit.</th>
                                 <th>Subtotal</th>
                                 <th>Fecha Caducidad</th>
                                 <th>Lote</th>
@@ -773,49 +398,53 @@
                 <button type="button" class="btn btn-primary btn-sm" id="addProductBtn">
                     <i class="ti ti-plus"></i> Agregar Producto
                 </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="alert('JavaScript funciona!')">
+                    <i class="ti ti-test-pipe"></i> Probar JavaScript
+                </button>
+                <button type="button" class="btn btn-info btn-sm" onclick="console.log('Botón clickeado'); $('#productModal').modal('show');">
+                    <i class="ti ti-test-pipe"></i> Probar Modal Directo
+                </button>
             </div>
 
-            <!-- Campos para compatibilidad -->
+            <!-- Campos ocultos para compatibilidad -->
+            <input type="hidden" name="details" id="detailsInput">
             <div class="mb-3 col-4">
                 <label class="form-label" for="exenta">Exenta</label>
-                <input type="number" step="0.01" min="0.00" id="exenta" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="Exenta $" name="exenta" />
+                <input type="number" step="0.01" min="0.00" id="exenta" value="0.00" class="form-control" readonly placeholder="$" aria-label="Exenta $" name="exenta" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="gravada">Gravada</label>
-                <input type="number" step="0.01" id="gravada" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="Gravada $" name="gravada" />
+                <input type="number" step="0.01" id="gravada" value="0.00" class="form-control" readonly placeholder="$" aria-label="Gravada $" name="gravada" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="iva">IVA</label>
-                <input type="number" step="0.01" id="iva" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="IVA $" name="iva" />
+                <input type="number" step="0.01" id="iva" value="0.00" class="form-control" readonly placeholder="$" aria-label="IVA $" name="iva" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="contrans">Contrans</label>
-                <input type="number" step="0.01" id="contrans" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="Contrans $" name="contrans" />
+                <input type="number" step="0.01" id="contrans" value="0.00" class="form-control" readonly placeholder="$" aria-label="Contrans $" name="contrans" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="fovial">FOVIAL</label>
-                <input type="number" step="0.01" id="fovial" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="FOVIAL $" name="fovial" />
+                <input type="number" step="0.01" id="fovial" value="0.00" class="form-control" readonly placeholder="$" aria-label="FOVIAL $" name="fovial" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="cesc">CESC</label>
-                <input type="number" step="0.01" id="cesc" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="CESC $" name="cesc" />
+                <input type="number" step="0.01" id="cesc" value="0.00" class="form-control" readonly placeholder="$" aria-label="CESC $" name="cesc" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="iretenido">IVA Retenido</label>
-                <input type="number" step="0.01" id="iretenido" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="IVA Retenido $" name="iretenido" />
+                <input type="number" step="0.01" id="iretenido" value="0.00" class="form-control" readonly placeholder="$" aria-label="IVA Retenido $" name="iretenido" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="others">Otros</label>
-                <input type="number" step="0.01" id="others" value="0.00" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="Otros $" name="others" />
+                <input type="number" step="0.01" id="others" value="0.00" class="form-control" readonly placeholder="$" aria-label="Otros $" name="others" />
             </div>
             <div class="mb-3 col-4">
                 <label class="form-label" for="total">Total</label>
-                <input type="number" step="0.01" id="total" class="form-control" onchange="updateTotals()" placeholder="$" aria-label="Total $" name="total" />
+                <input type="number" step="0.01" id="total" class="form-control" readonly placeholder="$" aria-label="Total $" name="total" />
             </div>
             <div class="text-center col-12 demo-vertical-spacing">
-              <button type="button" class="btn btn-info me-sm-3 me-1" onclick="calculateTotalsFromProducts()">
-                <i class="ti ti-calculator"></i> Calcular Totales
-              </button>
               <button type="submit" class="btn btn-primary me-sm-3 me-1">Agregar</button>
               <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Descartar</button>
             </div>
@@ -923,38 +552,8 @@
                             <label class="form-label" for="totaledit">Total</label>
                             <input type="number" step="0.01" id="totaledit" class="form-control" placeholder="$" aria-label="Total $" name="totaledit" />
                         </div>
-
-                        <!-- Sección de Productos para Edición -->
-                        <div class="mb-4 col-12">
-                            <h5>Productos de la Compra</h5>
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="editProductsTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Producto</th>
-                                            <th>Cantidad</th>
-                                            <th>Costo Unit.</th>
-                                            <th>Subtotal</th>
-                                            <th>Fecha Caducidad</th>
-                                            <th>Lote</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="editProductsTableBody">
-                                        <!-- Los productos se agregarán dinámicamente -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" id="addEditProductBtn">
-                                <i class="ti ti-plus"></i> Agregar Producto
-                            </button>
-                        </div>
-
                         <div class="text-center col-12 demo-vertical-spacing">
-                          <button type="button" class="btn btn-info me-sm-3 me-1" onclick="calculateEditTotalsFromProducts()">
-                            <i class="ti ti-calculator"></i> Calcular Totales
-                          </button>
-                          <button type="submit" class="btn btn-primary me-sm-3 me-1">Actualizar</button>
+                          <button type="submit" class="btn btn-primary me-sm-3 me-1">Agregar</button>
                           <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Descartar</button>
                         </div>
                       </form>
@@ -995,86 +594,292 @@
             </div>
         </div>
     </div>
+    @endsection
 
-    <!-- Modal para ver detalles de compra -->
-    <div class="modal fade" id="viewPurchaseModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Detalles de la Compra</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Información general -->
-                    <div class="mb-4 row">
-                        <div class="col-md-6">
-                            <h6>Información General</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Número:</strong></td>
-                                    <td id="viewNumber"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Fecha:</strong></td>
-                                    <td id="viewDate"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Proveedor:</strong></td>
-                                    <td id="viewProvider"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Empresa:</strong></td>
-                                    <td id="viewCompany"></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Totales</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Exenta:</strong></td>
-                                    <td id="viewExenta"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Gravada:</strong></td>
-                                    <td id="viewGravada"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>IVA:</strong></td>
-                                    <td id="viewIva"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Total:</strong></td>
-                                    <td id="viewTotal"></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
+    @section('page-script')
+    <script src="{{ asset('assets/js/app-purchase-list.js') }}"></script>
+    <script src="{{ asset('assets/js/forms-purchase.js') }}"></script>
+    
+    <script>
+    console.log('Script de productos cargado correctamente');
+    
+    let products = [];
+    let selectedProducts = [];
+    let productRowIndex = 0;
+    let currentRowIndex = 0;
 
-                    <!-- Tabla de productos -->
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="viewProductsTable">
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Costo Unit.</th>
-                                    <th>Subtotal</th>
-                                    <th>Fecha Caducidad</th>
-                                    <th>Lote</th>
-                                </tr>
-                            </thead>
-                            <tbody id="viewProductsTableBody">
-                                <!-- Los productos se cargarán dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    $(document).ready(function() {
+        console.log('Página cargada, inicializando sistema de productos...');
+        loadProducts();
+        
+        // Eventos
+        $('#addProductBtn').click(addProductRow);
+        $('#productSearch').on('input', filterProducts);
+        
+        // Modificar el envío del formulario
+        $('#addpurchaseForm').submit(function(e) {
+            e.preventDefault();
+            
+            if (selectedProducts.length === 0) {
+                alert('Debe agregar al menos un producto');
+                return;
+            }
+            
+            // Preparar datos para envío
+            const details = selectedProducts.map(product => ({
+                product_id: product.product_id,
+                quantity: parseInt(product.quantity),
+                unit_price: parseFloat(product.unit_price),
+                expiration_date: product.expiration_date || null,
+                batch_number: product.batch_number || null,
+                notes: product.notes || null
+            }));
+            
+            $('#detailsInput').val(JSON.stringify(details));
+            
+            // Enviar formulario
+            submitForm();
+        });
+    });
 
+    function loadProducts() {
+        console.log('Cargando productos...');
+        $.get('/purchase/products', function(response) {
+            console.log('Respuesta recibida:', response);
+            if (response.success) {
+                products = response.products;
+                console.log('Productos cargados:', products.length);
+                renderProductTable();
+            } else {
+                console.error('Error al cargar productos:', response.message);
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('Error en la petición:', error);
+            console.error('Status:', status);
+            console.error('Response:', xhr.responseText);
+        });
+    }
+
+    function renderProductTable() {
+        console.log('Renderizando tabla de productos...');
+        const tbody = $('#productSelectionTable tbody');
+        tbody.empty();
+        
+        if (products.length === 0) {
+            tbody.append('<tr><td colspan="5" class="text-center">No hay productos disponibles</td></tr>');
+            return;
+        }
+        
+        products.forEach(product => {
+            console.log('Procesando producto:', product);
+            const row = `
+                <tr>
+                    <td>${product.code || 'N/A'}</td>
+                    <td>${product.name}</td>
+                    <td>${product.provider ? product.provider.razonsocial : 'N/A'}</td>
+                    <td>$${parseFloat(product.price || 0).toFixed(2)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="selectProduct(${product.id})">
+                            Seleccionar
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+        console.log('Tabla renderizada con', products.length, 'productos');
+    }
+
+    function filterProducts() {
+        const searchTerm = $('#productSearch').val().toLowerCase();
+        const rows = $('#productSelectionTable tbody tr');
+        
+        rows.each(function() {
+            const text = $(this).text().toLowerCase();
+            $(this).toggle(text.includes(searchTerm));
+        });
+    }
+
+    function selectProduct(productId) {
+        const product = products.find(p => p.id === productId);
+        if (product) {
+            // Si estamos editando una fila existente
+            if (currentRowIndex < productRowIndex) {
+                const row = $(`#productRow_${currentRowIndex}`);
+                row.find('.product-name').val(product.name);
+                row.find('.product-id').val(product.id);
+                row.find('.unit-price').val(product.price);
+                updateSelectedProduct(currentRowIndex);
+                calculateRowTotal(currentRowIndex);
+            } else {
+                // Si es una nueva fila
+                addProductRow(product);
+            }
+            $('#productModal').modal('hide');
+        }
+    }
+
+    function addProductRow(product = null) {
+        if (!product) {
+            // Si no hay producto, abrir el modal para seleccionar
+            currentRowIndex = productRowIndex;
+            $('#productModal').modal('show');
+            loadProducts();
+            return;
+        }
+        
+        const row = `
+            <tr id="productRow_${productRowIndex}">
+                <td>
+                    <input type="text" class="form-control product-name" readonly
+                           value="${product ? product.name : ''}"
+                           onclick="showProductModal(${productRowIndex})">
+                    <input type="hidden" class="product-id" value="${product ? product.id : ''}">
+                </td>
+                <td>
+                    <input type="number" class="form-control quantity" min="1" value="1"
+                           onchange="calculateRowTotal(${productRowIndex})">
+                </td>
+                <td>
+                    <input type="number" class="form-control unit-price" min="0" step="0.01"
+                           value="${product ? product.price : ''}"
+                           onchange="calculateRowTotal(${productRowIndex})">
+                </td>
+                <td>
+                    <span class="subtotal">$0.00</span>
+                </td>
+                <td>
+                    <input type="date" class="form-control expiration-date"
+                           min="${$('#date').val()}"
+                           onchange="updateSelectedProduct(${productRowIndex})">
+                </td>
+                <td>
+                    <input type="text" class="form-control batch-number"
+                           onchange="updateSelectedProduct(${productRowIndex})">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(${productRowIndex})">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        
+        $('#productsTableBody').append(row);
+        
+        if (product) {
+            selectedProducts[productRowIndex] = {
+                product_id: product.id,
+                quantity: 1,
+                unit_price: parseFloat(product.price),
+                expiration_date: null,
+                batch_number: null,
+                notes: null
+            };
+            
+            calculateRowTotal(productRowIndex);
+        }
+        
+        productRowIndex++;
+    }
+
+    function showProductModal(rowIndex) {
+        currentRowIndex = rowIndex;
+        $('#productModal').modal('show');
+    }
+
+    function calculateRowTotal(rowIndex) {
+        const row = $(`#productRow_${rowIndex}`);
+        const quantity = parseInt(row.find('.quantity').val()) || 0;
+        const unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
+        
+        const subtotal = quantity * unitPrice;
+        
+        row.find('.subtotal').text(`$${subtotal.toFixed(2)}`);
+        
+        updateSelectedProduct(rowIndex);
+        calculateTotals();
+    }
+
+    function updateSelectedProduct(rowIndex) {
+        const row = $(`#productRow_${rowIndex}`);
+
+        selectedProducts[rowIndex] = {
+            product_id: parseInt(row.find('.product-id').val()),
+            quantity: parseInt(row.find('.quantity').val()) || 0,
+            unit_price: parseFloat(row.find('.unit-price').val()) || 0,
+            expiration_date: row.find('.expiration-date').val() || null,
+            batch_number: row.find('.batch-number').val() || null,
+            notes: null
+        };
+    }
+
+    function removeProductRow(rowIndex) {
+        $(`#productRow_${rowIndex}`).remove();
+        delete selectedProducts[rowIndex];
+        calculateTotals();
+    }
+
+    function calculateTotals() {
+        let subtotal = 0;
+        let totalIva = 0;
+        let totalAmount = 0;
+
+        Object.values(selectedProducts).forEach(product => {
+            const rowSubtotal = product.quantity * product.unit_price;
+            const rowIva = rowSubtotal * 0.13;
+            const rowTotal = rowSubtotal + rowIva;
+
+            subtotal += rowSubtotal;
+            totalIva += rowIva;
+            totalAmount += rowTotal;
+        });
+
+        // Actualizar campos del formulario
+        $('#exenta').val(subtotal.toFixed(2));
+        $('#gravada').val(subtotal.toFixed(2));
+        $('#iva').val(totalIva.toFixed(2));
+        $('#total').val(totalAmount.toFixed(2));
+    }
+
+    function submitForm() {
+        const formData = new FormData($('#addpurchaseForm')[0]);
+
+        $.ajax({
+            url: $('#addpurchaseForm').attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert('Compra creada correctamente');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                alert('Error: ' + (response?.message || 'Error desconocido'));
+            }
+        });
+    }
+
+    function checkExpiredProducts() {
+        $.get('/purchase/expired-products', function(response) {
+            if (response.success && response.data.length > 0) {
+                alert(`Hay ${response.data.length} productos vencidos en el inventario.`);
+            } else {
+                alert('No hay productos vencidos en el inventario.');
+            }
+        });
+    }
+
+    function testProductModal() {
+        console.log('Probando modal de productos...');
+        $('#productModal').modal('show');
+        loadProducts();
+    }
+    </script>
     @endsection

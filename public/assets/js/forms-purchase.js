@@ -122,6 +122,12 @@ function sumaedit(){
                     }
 
               });
+
+              // Cargar los detalles de productos de la compra
+              if (typeof loadPurchaseDetails === 'function') {
+                  loadPurchaseDetails(id);
+              }
+
               $("#updatePurchaseModal").modal("show");
         }
     });

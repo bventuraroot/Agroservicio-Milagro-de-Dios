@@ -2221,6 +2221,9 @@ class SaleController extends Controller
                 'mime' => 'application/pdf',
             ]);
 
+            // Usar la configuración existente del .env (sin modificaciones)
+            // La configuración se toma automáticamente de las variables de entorno
+
             // Enviar correo
             Mail::to($email)->send($correo);
 
@@ -2641,5 +2644,134 @@ class SaleController extends Controller
         }
     }
 
+    /**
+     * Envía factura por correo electrónico usando la configuración existente del .env
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function enviarFacturaPorCorreo(Request $request)
+    {
+        try {
+            // Validar datos requeridos
+            $request->validate([
+                'id_factura' => 'required|integer|exists:sales,id',
+                'email' => 'required|email',
+                'nombre_cliente' => 'nullable|string',
+            ]);
+
+            $id_factura = $request->id_factura;
+            $email = $request->email;
+            $nombre_cliente = $request->nombre_cliente;
+
+            // Obtener datos de la venta y empresa
+            $venta = Sale::join('companies', 'companies.id', '=', 'sales.company_id')
+                ->join('clients', 'clients.id', '=', 'sales.client_id')
+                ->select(
+                    'sales.*',
+                    'companies.name as company_name',
+                    'companies.giro as company_giro',
+                    'clients.firstname',
+                    'clients.secondname',
+                    'clients.firstlastname',
+                    'clients.secondlastname',
+                    'clients.comercial_name as client_comercial_name',
+                    'clients.name_contribuyente as client_name_contribuyente',
+                    'clients.email as client_email',
+                    'clients.tpersona'
+                )
+                ->where('sales.id', $id_factura)
+                ->first();
+
+            if (!$venta) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Factura no encontrada'
+                ], 404);
+            }
+
+            // Generar PDF usando la función existente
+            $pdf = $this->genera_pdflocal($id_factura);
+
+            if (!$pdf) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al generar el PDF de la factura'
+                ], 500);
+            }
+
+            // Preparar datos para el correo
+            $nombreEmpresa = $venta->company_name;
+            $numeroFactura = $venta->numero_control ?: "#{$venta->id}";
+
+            // Datos del cliente (construir nombre según el tipo de persona)
+            $nombreCompleto = '';
+            if ($venta->tpersona === 'N') { // Persona Natural
+                $nombreCompleto = trim(($venta->firstname ?: '') . ' ' . ($venta->secondname ?: '') . ' ' . ($venta->firstlastname ?: '') . ' ' . ($venta->secondlastname ?: ''));
+            } else { // Persona Jurídica
+                $nombreCompleto = $venta->client_comercial_name ?: $venta->client_name_contribuyente;
+            }
+
+            $clienteInfo = [
+                'nombre' => $nombre_cliente ?: $nombreCompleto,
+                'email' => $venta->client_email,
+                'telefono' => '',
+                'direccion' => ''
+            ];
+
+            // Datos para la plantilla del correo
+            $dataCorreo = [
+                'factura' => $venta,
+                'cliente' => $clienteInfo,
+                'fecha_emision' => $venta->created_at ? $venta->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i'),
+                'total' => $venta->total ?? 0,
+                'subtotal' => $venta->subtotal ?? 0,
+                'iva' => $venta->iva ?? 0
+            ];
+
+            // Crear instancia del correo
+            $correo = new EnviarFacturaOffline($dataCorreo, $numeroFactura, $nombreEmpresa);
+
+            // Adjuntar PDF
+            $nombreArchivoPdf = "Comprobante_{$numeroFactura}.pdf";
+            $correo->attachData($pdf->output(), $nombreArchivoPdf, [
+                'mime' => 'application/pdf',
+            ]);
+
+            // Enviar correo usando la configuración existente del .env
+            Mail::to($email)->send($correo);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Correo enviado exitosamente',
+                'data' => [
+                    'email' => $email,
+                    'numero_factura' => $numeroFactura,
+                    'empresa' => $nombreEmpresa,
+                    'cliente' => $clienteInfo['nombre']
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de entrada inválidos',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Error al enviar factura por correo: ' . $e->getMessage(), [
+                'id_factura' => $request->id_factura ?? null,
+                'email' => $request->email ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor al enviar el correo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
 }

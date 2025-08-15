@@ -489,59 +489,29 @@
                 <label for="category" class="form-label">Categoría</label>
                 <select class="select2category form-select" id="category" name="category" aria-label="Seleccionar categoría">
                     <option value="">Seleccione una categoría</option>
-                    <!-- SEMILLAS Y PLANTAS -->
-                    <option value="Semillas de Granos Básicos">Semillas de Granos Básicos</option>
-                    <option value="Semillas de Hortalizas">Semillas de Hortalizas</option>
-                    <option value="Semillas de Pastos">Semillas de Pastos</option>
-                    <option value="Plantas Ornamentales">Plantas Ornamentales</option>
-                    <option value="Plantas Frutales">Plantas Frutales</option>
-                    <option value="Pilones">Pilones</option>
-
-                    <!-- FERTILIZANTES Y NUTRICIÓN -->
-                    <option value="Fertilizantes Químicos">Fertilizantes Químicos</option>
-                    <option value="Fertilizantes Orgánicos">Fertilizantes Orgánicos</option>
-                    <option value="Abonos Foliares">Abonos Foliares</option>
-                    <option value="Micronutrientes">Micronutrientes</option>
-                    <option value="Correctores de pH">Correctores de pH</option>
-                    <option value="Bioestimulantes">Bioestimulantes</option>
-
-                    <!-- PRODUCTOS FITOSANITARIOS -->
-                    <option value="Insecticidas">Insecticidas</option>
-                    <option value="Fungicidas">Fungicidas</option>
-                    <option value="Herbicidas">Herbicidas</option>
-                    <option value="Acaricidas">Acaricidas</option>
-                    <option value="Nematicidas">Nematicidas</option>
-                    <option value="Reguladores de Crecimiento">Reguladores de Crecimiento</option>
-                    <option value="Productos Biológicos">Productos Biológicos</option>
-
-                    <!-- GANADERÍA -->
-                    <option value="Alimentos para Ganado">Alimentos para Ganado</option>
-                    <option value="Concentrados">Concentrados</option>
-                    <option value="Sales Minerales">Sales Minerales</option>
-                    <option value="Vitaminas para Animales">Vitaminas para Animales</option>
-                    <option value="Medicamentos Veterinarios">Medicamentos Veterinarios</option>
-                    <option value="Vacunas">Vacunas</option>
-                    <option value="Desparasitantes">Desparasitantes</option>
-
-                    <!-- HERRAMIENTAS Y EQUIPOS -->
-                    <option value="Herramientas Manuales">Herramientas Manuales</option>
-                    <option value="Bombas de Fumigar">Bombas de Fumigar</option>
-                    <option value="Sistemas de Riego">Sistemas de Riego</option>
-                    <option value="Maquinaria Agrícola">Maquinaria Agrícola</option>
-                    <option value="Repuestos y Accesorios">Repuestos y Accesorios</option>
-
-                    <!-- MATERIALES E INSUMOS -->
-                    <option value="Sustratos y Tierra">Sustratos y Tierra</option>
-                    <option value="Mallas y Tutores">Mallas y Tutores</option>
-                    <option value="Macetas y Contenedores">Macetas y Contenedores</option>
-                    <option value="Cintas de Riego">Cintas de Riego</option>
-                    <option value="Plásticos Agrícolas">Plásticos Agrícolas</option>
-                    <option value="Material de Invernadero">Material de Invernadero</option>
-
-                    <!-- OTROS -->
-                    <option value="Análisis de Suelos">Análisis de Suelos</option>
-                    <option value="Servicios Técnicos">Servicios Técnicos</option>
-                    <option value="Otros">Otros</option>
+                    <option value="ADHERENTE">ADHERENTE</option>
+                    <option value="ANTIBIOTICO">ANTIBIOTICO</option>
+                    <option value="ANTICONCEPTIVO">ANTICONCEPTIVO</option>
+                    <option value="ANTINFLAMATORIO">ANTINFLAMATORIO</option>
+                    <option value="BOMBAS">BOMBAS</option>
+                    <option value="CICATRIZANTE">CICATRIZANTE</option>
+                    <option value="COMIDA GATO">COMIDA GATO</option>
+                    <option value="COMIDA PERRO">COMIDA PERRO</option>
+                    <option value="CONCENTRADO">CONCENTRADO</option>
+                    <option value="DESPARASITANTE">DESPARASITANTE</option>
+                    <option value="FERTILIZANTE">FERTILIZANTE</option>
+                    <option value="FOLIAR">FOLIAR</option>
+                    <option value="FUNGICIDA">FUNGICIDA</option>
+                    <option value="GRANZA ARROZ">GRANZA ARROZ</option>
+                    <option value="HERBICIDA">HERBICIDA</option>
+                    <option value="INSECTICIDA">INSECTICIDA</option>
+                    <option value="LECHE CACHORRO">LECHE CACHORRO</option>
+                    <option value="PLAGUICIDA">PLAGUICIDA</option>
+                    <option value="PLASTICO">PLASTICO</option>
+                    <option value="POLLO">POLLO</option>
+                    <option value="SEMILLAS">SEMILLAS</option>
+                    <option value="VETERINARIO">VETERINARIO</option>
+                    <option value="VITAMINA">VITAMINA</option>
                 </select>
             </div>
             <div class="mb-3 col-6">
@@ -652,59 +622,29 @@
                 <label for="categoryedit" class="form-label">Categoría</label>
                 <select class="select2categoryedit form-select" id="categoryedit" name="categoryedit" aria-label="Seleccionar categoría">
                     <option value="">Seleccione una categoría</option>
-                    <!-- SEMILLAS Y PLANTAS -->
-                    <option value="Semillas de Granos Básicos">Semillas de Granos Básicos</option>
-                    <option value="Semillas de Hortalizas">Semillas de Hortalizas</option>
-                    <option value="Semillas de Pastos">Semillas de Pastos</option>
-                    <option value="Plantas Ornamentales">Plantas Ornamentales</option>
-                    <option value="Plantas Frutales">Plantas Frutales</option>
-                    <option value="Pilones">Pilones</option>
-
-                    <!-- FERTILIZANTES Y NUTRICIÓN -->
-                    <option value="Fertilizantes Químicos">Fertilizantes Químicos</option>
-                    <option value="Fertilizantes Orgánicos">Fertilizantes Orgánicos</option>
-                    <option value="Abonos Foliares">Abonos Foliares</option>
-                    <option value="Micronutrientes">Micronutrientes</option>
-                    <option value="Correctores de pH">Correctores de pH</option>
-                    <option value="Bioestimulantes">Bioestimulantes</option>
-
-                    <!-- PRODUCTOS FITOSANITARIOS -->
-                    <option value="Insecticidas">Insecticidas</option>
-                    <option value="Fungicidas">Fungicidas</option>
-                    <option value="Herbicidas">Herbicidas</option>
-                    <option value="Acaricidas">Acaricidas</option>
-                    <option value="Nematicidas">Nematicidas</option>
-                    <option value="Reguladores de Crecimiento">Reguladores de Crecimiento</option>
-                    <option value="Productos Biológicos">Productos Biológicos</option>
-
-                    <!-- GANADERÍA -->
-                    <option value="Alimentos para Ganado">Alimentos para Ganado</option>
-                    <option value="Concentrados">Concentrados</option>
-                    <option value="Sales Minerales">Sales Minerales</option>
-                    <option value="Vitaminas para Animales">Vitaminas para Animales</option>
-                    <option value="Medicamentos Veterinarios">Medicamentos Veterinarios</option>
-                    <option value="Vacunas">Vacunas</option>
-                    <option value="Desparasitantes">Desparasitantes</option>
-
-                    <!-- HERRAMIENTAS Y EQUIPOS -->
-                    <option value="Herramientas Manuales">Herramientas Manuales</option>
-                    <option value="Bombas de Fumigar">Bombas de Fumigar</option>
-                    <option value="Sistemas de Riego">Sistemas de Riego</option>
-                    <option value="Maquinaria Agrícola">Maquinaria Agrícola</option>
-                    <option value="Repuestos y Accesorios">Repuestos y Accesorios</option>
-
-                    <!-- MATERIALES E INSUMOS -->
-                    <option value="Sustratos y Tierra">Sustratos y Tierra</option>
-                    <option value="Mallas y Tutores">Mallas y Tutores</option>
-                    <option value="Macetas y Contenedores">Macetas y Contenedores</option>
-                    <option value="Cintas de Riego">Cintas de Riego</option>
-                    <option value="Plásticos Agrícolas">Plásticos Agrícolas</option>
-                    <option value="Material de Invernadero">Material de Invernadero</option>
-
-                    <!-- OTROS -->
-                    <option value="Análisis de Suelos">Análisis de Suelos</option>
-                    <option value="Servicios Técnicos">Servicios Técnicos</option>
-                    <option value="Otros">Otros</option>
+                    <option value="ADHERENTE">ADHERENTE</option>
+                    <option value="ANTIBIOTICO">ANTIBIOTICO</option>
+                    <option value="ANTICONCEPTIVO">ANTICONCEPTIVO</option>
+                    <option value="ANTINFLAMATORIO">ANTINFLAMATORIO</option>
+                    <option value="BOMBAS">BOMBAS</option>
+                    <option value="CICATRIZANTE">CICATRIZANTE</option>
+                    <option value="COMIDA GATO">COMIDA GATO</option>
+                    <option value="COMIDA PERRO">COMIDA PERRO</option>
+                    <option value="CONCENTRADO">CONCENTRADO</option>
+                    <option value="DESPARASITANTE">DESPARASITANTE</option>
+                    <option value="FERTILIZANTE">FERTILIZANTE</option>
+                    <option value="FOLIAR">FOLIAR</option>
+                    <option value="FUNGICIDA">FUNGICIDA</option>
+                    <option value="GRANZA ARROZ">GRANZA ARROZ</option>
+                    <option value="HERBICIDA">HERBICIDA</option>
+                    <option value="INSECTICIDA">INSECTICIDA</option>
+                    <option value="LECHE CACHORRO">LECHE CACHORRO</option>
+                    <option value="PLAGUICIDA">PLAGUICIDA</option>
+                    <option value="PLASTICO">PLASTICO</option>
+                    <option value="POLLO">POLLO</option>
+                    <option value="SEMILLAS">SEMILLAS</option>
+                    <option value="VETERINARIO">VETERINARIO</option>
+                    <option value="VITAMINA">VITAMINA</option>
                 </select>
             </div>
             <div class="mb-3 col-6">

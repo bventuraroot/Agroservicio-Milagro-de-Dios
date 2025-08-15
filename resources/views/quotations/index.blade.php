@@ -22,6 +22,8 @@
 
 @section('page-script')
     <script src="{{ asset('assets/js/app-quotation-list.js') }}"></script>
+    <!-- Script para envío de facturas por correo -->
+    <script src="{{ asset('assets/js/enviar-factura-correo.js') }}"></script>
 @endsection
 
 @section('title', 'Cotizaciones')

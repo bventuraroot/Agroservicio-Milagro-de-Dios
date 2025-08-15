@@ -39,6 +39,13 @@
   <!-- Include Scripts -->
   @include('layouts/sections/scripts')
 
+                  <!-- AI Chat Styles and Scripts -->
+                <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}">
+                <script src="{{ asset('js/ai-chat-simple.js') }}" defer></script>
+
+  <!-- AI Chat Component -->
+  @include('components.ai-chat')
+
 </body>
 
 </html>

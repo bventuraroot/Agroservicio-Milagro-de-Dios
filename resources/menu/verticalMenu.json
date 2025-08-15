@@ -133,6 +133,12 @@
             ]
         },
         {
+            "url": "/ai-chat",
+            "name": "Chat IA",
+            "icon": "menu-icon fa-solid fa-robot",
+            "slug": "ai-chat.index"
+        },
+        {
             "url": "/factmh/index",
             "name": "Administracion DTE",
             "icon": "menu-icon fa-solid fa-satellite-dish",

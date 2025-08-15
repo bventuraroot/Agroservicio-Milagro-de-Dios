@@ -27,7 +27,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
+                <h5 class="mb-0 card-title">
                     <i class="ti ti-file-plus me-2"></i>Nueva Cotización
                 </h5>
                 <a href="{{ route('cotizaciones.index') }}" class="btn btn-outline-secondary">
@@ -42,13 +42,13 @@
                     <!-- Información General -->
                     <div class="row">
                         <div class="col-12">
-                            <h6 class="fw-semibold mb-3">
+                            <h6 class="mb-3 fw-semibold">
                                 <i class="ti ti-info-circle me-2"></i>Información General
                             </h6>
                         </div>
                     </div>
 
-                    <div class="row mb-4">
+                    <div class="mb-4 row">
                         <div class="col-md-6">
                             <label class="form-label" for="company_id">Empresa <span class="text-danger">*</span></label>
                             <select id="company_id" name="company_id" class="form-select select2" required>
@@ -70,7 +70,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-4">
+                    <div class="mb-4 row">
                         <div class="col-md-3">
                             <label class="form-label" for="quote_date">Fecha de Cotización <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="quote_date" name="quote_date" value="{{ date('Y-m-d') }}" required>
@@ -96,7 +96,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-4">
+                    <div class="mb-4 row">
                         <div class="col-md-6">
                             <label class="form-label" for="payment_terms">Términos de Pago</label>
                             <input type="text" class="form-control" id="payment_terms" name="payment_terms" placeholder="ej: 50% adelanto, 50% contra entrega">
@@ -106,20 +106,20 @@
                     <!-- Productos -->
                     <div class="row">
                         <div class="col-12">
-                            <h6 class="fw-semibold mb-3">
+                            <h6 class="mb-3 fw-semibold">
                                 <i class="ti ti-package me-2"></i>Productos y Servicios
                             </h6>
                         </div>
                     </div>
 
-                    <div class="row mb-3">
+                    <div class="mb-3 row">
                         <div class="col-md-4">
                             <label class="form-label" for="product_select">Seleccionar Producto</label>
                             <select id="product_select" class="form-select select2">
                                 <option value="">Buscar producto...</option>
                                 @forelse($products as $product)
-                                    <option value="{{ $product->id }}" data-price="{{ $product->price }}" data-name="{{ $product->name }}">
-                                        {{ $product->name }} - ${{ number_format($product->price, 2) }}
+                                    <option value="{{ $product->id }}" data-price="{{ $product->price }}" data-name="{{ $product->name }}" data-code="{{ $product->code }}">
+                                      {{ $product->code }} - {{ $product->name }} - ${{ number_format($product->price, 2) }}
                                     </option>
                                 @empty
                                     <option value="" disabled>No hay productos disponibles</option>
@@ -149,7 +149,7 @@
                     </div>
 
                     <!-- Tabla de Productos -->
-                    <div class="table-responsive mb-4">
+                    <div class="mb-4 table-responsive">
                         <table class="table table-bordered" id="productsTable">
                             <thead class="table-light">
                                 <tr>
@@ -170,7 +170,7 @@
                     </div>
 
                     <!-- Mensaje para cuando no hay productos -->
-                    <div id="noProductsMessage" class="alert alert-info text-center">
+                    <div id="noProductsMessage" class="text-center alert alert-info">
                         <i class="ti ti-info-circle me-2"></i>
                         No hay productos agregados. Seleccione un producto para comenzar.
                     </div>
@@ -197,17 +197,17 @@
                                 <div class="card-body">
                                     <h6 class="card-title">Resumen de Totales</h6>
 
-                                    <div class="d-flex justify-content-between mb-2">
+                                    <div class="mb-2 d-flex justify-content-between">
                                         <span>Subtotal:</span>
                                         <span id="subtotalAmount">$0.00</span>
                                     </div>
 
-                                    <div class="d-flex justify-content-between mb-2">
+                                    <div class="mb-2 d-flex justify-content-between">
                                         <span>Descuentos:</span>
                                         <span id="discountAmount">$0.00</span>
                                     </div>
 
-                                    <div class="d-flex justify-content-between mb-2">
+                                    <div class="mb-2 d-flex justify-content-between">
                                         <span>IVA (13%):</span>
                                         <span id="taxAmount">$0.00</span>
                                     </div>
@@ -224,7 +224,7 @@
                     </div>
 
                     <!-- Botones de Acción -->
-                    <div class="row mt-4">
+                    <div class="mt-4 row">
                         <div class="col-12">
                             <div class="d-flex justify-content-between">
                                 <a href="{{ route('cotizaciones.index') }}" class="btn btn-outline-secondary">

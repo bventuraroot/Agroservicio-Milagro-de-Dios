@@ -686,11 +686,14 @@
                                                title="Solo Previsualizar Ticket">
                                                 <i class="ti ti-eye"></i>
                                             </a>
-                                            <a href="#"
-                                                    onclick="EnviarCorreo({{$sale->id}} ,'{{ $sale->mailClient}}','{{$sale->id_doc }}')"
-                                                    class="btn btn-icon btn-outline-success btn-sm me-1" title="Enviar por correo">
+                                            <button type="button"
+                                                    class="btn btn-icon btn-outline-success btn-sm me-1 btn-enviar-correo"
+                                                    data-factura-id="{{ $sale->id }}"
+                                                    data-correo-cliente="{{ $sale->mailClient }}"
+                                                    data-numero-factura="{{ $sale->id_doc }}"
+                                                    title="Enviar factura por correo">
                                                 <i class="ti ti-mail"></i>
-                                            </a>
+                                            </button>
                                             <div class="btn-group dropup">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                                                     <i class="ti ti-dots-vertical"></i>
@@ -915,4 +918,7 @@
             }
         });
     </script>
+
+    <!-- Script para envío de facturas por correo -->
+    <script src="{{ asset('assets/js/enviar-factura-correo.js') }}"></script>
 @endsection

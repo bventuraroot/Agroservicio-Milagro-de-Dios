@@ -6,52 +6,63 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
-class Inventory extends Model
+class PurchaseDetail extends Model
 {
     use HasFactory;
 
-    protected $table = 'inventory';
-
     protected $fillable = [
+        'purchase_id',
         'product_id',
         'quantity',
-        'minimum_stock',
-        'location',
+        'unit_price',
+        'subtotal',
+        'tax_amount',
+        'total_amount',
         'expiration_date',
         'batch_number',
-        'expiring_quantity',
-        'expiration_warning_sent',
-        'last_expiration_check'
+        'notes',
+        'added_to_inventory',
+        'user_id'
     ];
 
     protected $casts = [
         'quantity' => 'integer',
-        'minimum_stock' => 'integer',
+        'unit_price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
         'expiration_date' => 'date',
-        'expiring_quantity' => 'integer',
-        'expiration_warning_sent' => 'boolean',
-        'last_expiration_check' => 'date'
+        'added_to_inventory' => 'boolean'
     ];
 
+    /**
+     * Relación con la compra
+     */
+    public function purchase()
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
+    /**
+     * Relación con el producto
+     */
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * Relación con el usuario
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function provider()
-    {
-        return $this->belongsTo(Provider::class);
-    }
-
     /**
-     * Verificar si el inventario tiene productos próximos a vencer
+     * Verificar si el producto está próximo a vencer
      */
-    public function hasExpiringProducts($days = 30)
+    public function isExpiringSoon($days = 30)
     {
         if (!$this->expiration_date) {
             return false;
@@ -61,9 +72,9 @@ class Inventory extends Model
     }
 
     /**
-     * Verificar si el inventario tiene productos vencidos
+     * Verificar si el producto ya venció
      */
-    public function hasExpiredProducts()
+    public function isExpired()
     {
         if (!$this->expiration_date) {
             return false;
@@ -93,15 +104,15 @@ class Inventory extends Model
             return 'no_expiration';
         }
 
-        if ($this->hasExpiredProducts()) {
+        if ($this->isExpired()) {
             return 'expired';
         }
 
-        if ($this->hasExpiringProducts(7)) {
+        if ($this->isExpiringSoon(7)) {
             return 'critical';
         }
 
-        if ($this->hasExpiringProducts(30)) {
+        if ($this->isExpiringSoon(30)) {
             return 'warning';
         }
 
@@ -135,4 +146,5 @@ class Inventory extends Model
             default => 'Sin caducidad'
         };
     }
+
 }

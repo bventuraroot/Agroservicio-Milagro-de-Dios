@@ -49,6 +49,13 @@
             padding: 40px 30px;
         }
 
+        .mensaje {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
         .factura-info {
             background-color: #f7fafc;
             border: 2px solid #e2e8f0;
@@ -76,13 +83,6 @@
             color: #718096;
         }
 
-        .mensaje {
-            font-size: 16px;
-            line-height: 1.8;
-            margin-bottom: 30px;
-            color: #555;
-        }
-
         .cliente-info {
             background-color: #edf2f7;
             border-left: 4px solid #3182ce;
@@ -99,7 +99,6 @@
 
         .cliente-info p {
             margin: 5px 0;
-            font-size: 14px;
             color: #4a5568;
         }
 
@@ -113,8 +112,8 @@
         }
 
         .adjunto-info .icon {
-            font-size: 48px;
-            margin-bottom: 15px;
+            font-size: 32px;
+            margin-bottom: 10px;
         }
 
         .adjunto-info h3 {
@@ -123,71 +122,66 @@
         }
 
         .adjunto-info p {
-            color: #38a169;
-            font-size: 14px;
+            color: #2f855a;
+            margin: 5px 0;
         }
 
         .nota-importante {
-            background-color: #fffbeb;
-            border: 1px solid #f6e05e;
+            background-color: #fffaf0;
+            border: 1px solid #f6ad55;
             border-radius: 8px;
             padding: 20px;
             margin: 30px 0;
         }
 
         .nota-importante h4 {
-            color: #744210;
+            color: #c05621;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
         }
 
         .nota-importante p {
-            color: #975a16;
-            font-size: 14px;
-            line-height: 1.6;
+            color: #744210;
+            margin: 5px 0;
         }
 
         .footer {
-            background-color: #f8f9fa;
+            background-color: #2d3748;
+            color: white;
             padding: 30px;
             text-align: center;
-            border-top: 1px solid #e9ecef;
         }
 
         .footer p {
-            color: #888;
-            font-size: 14px;
-            margin-bottom: 10px;
+            margin: 5px 0;
         }
 
         .contacto-info {
             margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            border-top: 1px solid #4a5568;
         }
 
         .contacto-info p {
             font-size: 12px;
-            color: #718096;
+            opacity: 0.8;
         }
 
-        @media only screen and (max-width: 600px) {
+        @media (max-width: 600px) {
             .email-container {
-                margin: 0;
-                border-radius: 0;
+                margin: 10px;
+                border-radius: 5px;
             }
 
-            .header, .content {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .content {
                 padding: 30px 20px;
             }
 
             .header h1 {
                 font-size: 24px;
-            }
-
-            .factura-numero {
-                font-size: 20px;
             }
         }
     </style>
@@ -215,37 +209,18 @@
                 @endif
 
                 <div class="fecha-emision">
-                    📅 Fecha de emisión: {{ now()->format('d/m/Y H:i') }}
+                    📅 Fecha de emisión: {{ $data['fecha_emision'] ?? now()->format('d/m/Y H:i') }}
                 </div>
             </div>
 
-            @if(isset($data['cliente']) || isset($data['client']))
-            <div class="cliente-info">
-                <h3>👤 Información del Cliente</h3>
-                @php
-                    $cliente = $data['cliente'] ?? $data['client'] ?? null;
-                @endphp
-
-                @if($cliente)
-                    @if(isset($cliente['nombre']) || isset($cliente['firstname']))
-                        <p><strong>Nombre:</strong>
-                            {{ $cliente['nombre'] ?? ($cliente['firstname'] . ' ' . ($cliente['lastname'] ?? '')) }}
-                        </p>
+            @if(isset($data['cliente']) && $data['cliente']['nombre'])
+                <div class="cliente-info">
+                    <h3>👤 Información del Cliente</h3>
+                    <p><strong>Nombre:</strong> {{ $data['cliente']['nombre'] }}</p>
+                    @if($data['cliente']['email'])
+                        <p><strong>Email:</strong> {{ $data['cliente']['email'] }}</p>
                     @endif
-
-                    @if(isset($cliente['email']))
-                        <p><strong>Email:</strong> {{ $cliente['email'] }}</p>
-                    @endif
-
-                    @if(isset($cliente['telefono']) || isset($cliente['tel1']))
-                        <p><strong>Teléfono:</strong> {{ $cliente['telefono'] ?? $cliente['tel1'] }}</p>
-                    @endif
-
-                    @if(isset($cliente['direccion']) || isset($cliente['address']))
-                        <p><strong>Dirección:</strong> {{ $cliente['direccion'] ?? $cliente['address'] }}</p>
-                    @endif
-                @endif
-            </div>
+                </div>
             @endif
 
             <div class="adjunto-info">
@@ -260,21 +235,11 @@
                 <p>Este documento es su comprobante de compra oficial. Si tiene alguna pregunta sobre su factura o necesita asistencia adicional, no dude en contactarnos.</p>
                 <p><strong>Nota:</strong> Este es un proceso automático, por favor no responda directamente a este correo.</p>
             </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-                <p style="font-size: 16px; color: #4a5568;">
-                    <strong>¡Gracias por su compra!</strong>
-                </p>
-                <p style="font-size: 14px; color: #718096;">
-                    Esperamos seguir siendo su proveedor de confianza
-                </p>
-            </div>
         </div>
 
         <div class="footer">
             <p><strong>{{ $nombreEmpresa ?? config('app.name') }}</strong></p>
             <p>Este correo fue enviado automáticamente</p>
-
             <div class="contacto-info">
                 <p>Para consultas o soporte, contáctenos a través de nuestros canales oficiales</p>
                 <p>© {{ date('Y') }} {{ $nombreEmpresa ?? config('app.name') }}. Todos los derechos reservados.</p>

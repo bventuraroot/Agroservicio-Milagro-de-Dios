@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\AIController;
+use App\Http\Controllers\AIChatPageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -145,29 +147,7 @@ Route::group(['prefix' => 'provider', 'as' => 'provider.'], function(){
 
     });
 
-    Route::group(['prefix' => 'quotations', 'as' => 'quotations.'], function(){
-        Route::get('index', [QuotationController::class, 'index'])->name('index');
-        Route::get('create', [QuotationController::class, 'create'])->name('create');
-        Route::post('store', [QuotationController::class, 'store'])->name('store');
-        Route::get('show/{id}', [QuotationController::class, 'show'])->name('show');
-        Route::get('edit/{id}', [QuotationController::class, 'edit'])->name('edit');
-        Route::patch('update/{id}', [QuotationController::class, 'update'])->name('update');
-        Route::get('destroy/{id}', [QuotationController::class, 'destroy'])->name('destroy');
 
-        // Rutas para cambiar estado
-        Route::patch('change-status/{id}', [QuotationController::class, 'changeStatus'])->name('changeStatus');
-
-        // Rutas para PDF
-        Route::get('pdf/{id}', [QuotationController::class, 'generatePDF'])->name('pdf');
-        Route::get('download/{id}', [QuotationController::class, 'downloadPDF'])->name('download');
-
-        // Rutas para correo
-        Route::post('send-email/{id}', [QuotationController::class, 'sendEmail'])->name('sendEmail');
-
-        // Rutas AJAX
-        Route::get('get-quotations', [QuotationController::class, 'getQuotations'])->name('getQuotations');
-        Route::get('get-quotation/{id}', [QuotationController::class, 'getQuotation'])->name('getQuotation');
-    });
 
 Route::group(['prefix' => 'product', 'as' => 'product.'], function(){
         Route::get('index', [ProductController::class, 'index'])->name('index');
@@ -210,6 +190,10 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::get('ncr/{id_sale}', [SaleController::class, 'ncr'])->name('ncr');
         Route::get('envia_correo', [SaleController::class, 'envia_correo'])->name('envia_correo');
         Route::post('enviar_correo_offline', [SaleController::class, 'enviar_correo_offline'])->name('enviar_correo_offline');
+        Route::post('enviar-factura-correo', [SaleController::class, 'enviarFacturaPorCorreo'])->name('enviar-factura-correo');
+        Route::get('enviar-factura-correo-ejemplo', function() {
+            return view('sales.enviar-factura-correo');
+        })->name('enviar-factura-correo-ejemplo');
         Route::get('print/{id}', [SaleController::class, 'print'])->name('print');
         Route::get('destinos', [SaleController::class, 'destinos'])->name('destinos');
         Route::get('linea', [SaleController::class, 'linea'])->name('linea');
@@ -224,6 +208,14 @@ Route::group(['prefix' => 'purchase', 'as' => 'purchase.'], function(){
         Route::patch('update', [PurchaseController::class, 'update'])->name('update');
         Route::get('getpurchaseid/{id}', [PurchaseController::class, 'getpurchaseid'])->name('getpurchaseid');
         Route::get('destroy/{id}', [PurchaseController::class, 'destroy'])->name('destroy');
+
+        // Nuevas rutas para el sistema mejorado
+        Route::get('details/{id}', [PurchaseController::class, 'getDetails'])->name('details');
+        Route::post('add-to-inventory/{id}', [PurchaseController::class, 'addToInventory'])->name('add-to-inventory');
+        Route::get('products', [PurchaseController::class, 'getProducts'])->name('products');
+        Route::get('expiring-products', [PurchaseController::class, 'getExpiringProducts'])->name('expiring-products');
+        Route::get('expired-products', [PurchaseController::class, 'getExpiredProducts'])->name('expired-products');
+        Route::get('expiring-products-view', [PurchaseController::class, 'expiringProductsView'])->name('expiring-products-view');
     });
 
 
@@ -369,6 +361,28 @@ Route::group(['prefix' => 'cotizaciones', 'as' => 'cotizaciones.'], function(){
     Route::get('get-quotations', [QuotationController::class, 'getQuotations'])->name('getQuotations');
     Route::get('get-quotation/{id}', [QuotationController::class, 'getQuotation'])->name('getQuotation');
 });
+
+// Rutas de IA
+Route::group(['prefix' => 'ai', 'as' => 'ai.'], function(){
+    Route::post('chat', [AIController::class, 'chat'])->name('chat');
+    Route::post('analyze', [AIController::class, 'analyze'])->name('analyze');
+    Route::get('settings', [AIController::class, 'getSettings'])->name('settings');
+    Route::post('settings', [AIController::class, 'updateSettings'])->name('updateSettings');
+    Route::get('conversations', [AIController::class, 'getConversations'])->name('conversations');
+});
+
+// Rutas del módulo de Chat IA (página dedicada)
+Route::group(['prefix' => 'ai-chat', 'as' => 'ai-chat.'], function(){
+    Route::get('/', [AIChatPageController::class, 'index'])->name('index');
+    Route::post('send', [AIChatPageController::class, 'sendMessage'])->name('send');
+    Route::get('history', [AIChatPageController::class, 'getHistory'])->name('history');
+    Route::get('conversation/{id}', [AIChatPageController::class, 'getConversation'])->name('conversation');
+    Route::delete('conversation/{id}', [AIChatPageController::class, 'deleteConversation'])->name('delete-conversation');
+    Route::delete('clear-history', [AIChatPageController::class, 'clearHistory'])->name('clear-history');
+    Route::post('settings', [AIChatPageController::class, 'updateSettings'])->name('settings');
+});
+
+
 
 
 });

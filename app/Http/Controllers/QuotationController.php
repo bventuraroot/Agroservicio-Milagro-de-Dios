@@ -43,7 +43,7 @@ class QuotationController extends Controller
         $clients = Client::all()->sortBy('razonsocial');
 
                 // Obtener productos
-        $products = Product::where('state', 'active')->orderBy('name')->get();
+        $products = Product::where('state', 1)->orderBy('name')->get();
 
         return view('quotations.create', compact('companies', 'clients', 'products'));
     }
@@ -70,7 +70,7 @@ class QuotationController extends Controller
             ->get();
 
         $clients = Client::all()->sortBy('razonsocial');
-        $products = Product::where('state', 'active')->orderBy('name')->get();
+        $products = Product::where('state', 1)->orderBy('name')->get();
 
         return view('quotations.edit', compact('quotation', 'companies', 'clients', 'products'));
     }

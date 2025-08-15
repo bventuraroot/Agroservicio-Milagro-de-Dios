@@ -48,6 +48,10 @@ class EnviarFacturaOffline extends Mailable
 
         return new Envelope(
             subject: $asunto,
+            from: new \Illuminate\Mail\Mailables\Address(
+                config('mail.from.address'),
+                config('mail.from.name')
+            ),
         );
     }
 
@@ -95,7 +99,8 @@ class EnviarFacturaOffline extends Mailable
             $asunto .= " - {$this->nombreEmpresa}";
         }
 
-        return $this->subject($asunto)
+        return $this->from(config('mail.from.address'), config('mail.from.name'))
+                    ->subject($asunto)
                     ->view('emails.factura-offline')
                     ->with([
                         'data' => $this->data,

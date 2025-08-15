@@ -213,6 +213,8 @@ if (!function_exists('enviar_correo_prueba')) {
 }
 
 
+
+
 if (!function_exists('convertir_json')) {
     function convertir_json($compro_procesar, $codTransaccion="01")
     {
